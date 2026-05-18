@@ -1,0 +1,61 @@
+.add-transaction-form {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #E8E5DF;
+}
+
+.add-transaction-form h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    color: #2C3E2F;
+}
+
+.add-transaction-form .form-group {
+    margin-bottom: 14px;
+}
+
+.add-transaction-form label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #7F8C8D;
+}
+
+.add-transaction-form input,
+.add-transaction-form select {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #2C3E2F;
+}
+
+.add-transaction-form input:focus,
+.add-transaction-form select:focus {
+    outline: none;
+    border-color: #2ECC71;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #2ECC71, #27AE60);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+}

@@ -1,0 +1,213 @@
+.categories-page {
+    width: 100%;
+}
+
+.add-category-form {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid #E8E5DF;
+}
+
+.add-category-form h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    color: #2C3E2F;
+}
+
+.add-category-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.5fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.add-category-form .form-group {
+    margin-bottom: 0;
+}
+
+.add-category-form label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #7F8C8D;
+}
+
+.add-category-form input,
+.add-category-form select {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.add-category-form input[type="color"] {
+    height: 42px;
+    padding: 4px;
+}
+
+.categories-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.category-section {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #E8E5DF;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid;
+}
+
+.section-title.expense-title {
+    color: #E74C3C;
+    border-bottom-color: rgba(231, 76, 60, 0.3);
+}
+
+.section-title.income-title {
+    color: #27AE60;
+    border-bottom-color: rgba(39, 174, 96, 0.3);
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.category-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #FDFBF7;
+    border-radius: 12px;
+    border: 1px solid #E8E5DF;
+    transition: all 0.2s;
+}
+
+.category-card:hover {
+    border-color: #2ECC71;
+}
+
+.category-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.category-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.category-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.category-limit {
+    font-size: 12px;
+    color: #7F8C8D;
+}
+
+.category-card .btn-edit,
+.category-card .btn-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+}
+
+.category-card .btn-edit {
+    color: #3498DB;
+}
+
+.category-card .btn-delete {
+    color: #BDC3C7;
+}
+
+.category-card .btn-delete:hover {
+    color: #E74C3C;
+}
+
+.edit-fields {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+}
+
+.edit-fields input,
+.edit-fields select {
+    padding: 6px 10px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.edit-fields input[type="color"] {
+    width: 50px;
+    height: 34px;
+}
+
+.category-card .btn-save {
+    background: none;
+    border: none;
+    color: #27AE60;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.category-card .btn-cancel {
+    background: none;
+    border: none;
+    color: #E74C3C;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.empty-message {
+    text-align: center;
+    color: #BDC3C7;
+    padding: 32px;
+}
+
+@media (max-width: 768px) {
+    .add-category-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .categories-sections {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .edit-fields {
+        flex-wrap: wrap;
+    }
+}

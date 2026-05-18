@@ -1,0 +1,181 @@
+.transactions-page {
+    width: 100%;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.btn-export {
+    padding: 10px 20px;
+    background-color: transparent;
+    border: 1px solid #E8E5DF;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export:hover {
+    background-color: #FDFBF7;
+    border-color: #27AE60;
+    color: #27AE60;
+}
+
+.transactions-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #E8E5DF;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-card span {
+    font-size: 14px;
+    color: #7F8C8D;
+}
+
+.summary-card strong {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.summary-card.income strong {
+    color: #27AE60;
+}
+
+.summary-card.expense strong {
+    color: #E74C3C;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-bar select,
+.filter-bar input {
+    padding: 10px 14px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #2C3E2F;
+}
+
+.filter-bar select:focus,
+.filter-bar input:focus {
+    outline: none;
+    border-color: #2ECC71;
+}
+
+.filter-bar input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.transactions-table-container {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid #E8E5DF;
+    overflow-x: auto;
+}
+
+.transactions-table-full {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table-full th,
+.transactions-table-full td {
+    padding: 14px 12px;
+    text-align: left;
+    border-bottom: 1px solid #E8E5DF;
+    font-size: 13px;
+}
+
+.transactions-table-full th {
+    font-weight: 600;
+    color: #7F8C8D;
+    font-size: 12px;
+    background-color: #FDFBF7;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.type-badge.income {
+    background-color: rgba(39, 174, 96, 0.1);
+    color: #27AE60;
+}
+
+.type-badge.expense {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #E74C3C;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+}
+
+.btn-edit {
+    color: #3498DB;
+}
+
+.btn-delete {
+    color: #E74C3C;
+}
+
+.btn-save {
+    color: #27AE60;
+}
+
+.btn-cancel {
+    color: #E74C3C;
+}
+
+.transactions-table-full input,
+.transactions-table-full select {
+    padding: 6px 8px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.empty-message {
+    text-align: center;
+    color: #BDC3C7;
+    padding: 40px;
+}

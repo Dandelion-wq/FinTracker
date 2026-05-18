@@ -1,0 +1,78 @@
+.expense-chart {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #E8E5DF;
+    width: 100%;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.expense-chart h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2C3E2F;
+    margin: 0;
+}
+
+.chart-type-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.chart-type-btn {
+    padding: 6px 14px;
+    background-color: #FDFBF7;
+    border: 1px solid #E8E5DF;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #7F8C8D;
+}
+
+.chart-type-btn:hover {
+    border-color: #2ECC71;
+    color: #27AE60;
+}
+
+.chart-type-btn.active {
+    background: linear-gradient(135deg, #2ECC71, #27AE60);
+    border-color: transparent;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .expense-chart {
+        padding: 12px;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .chart-type-selector {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .chart-type-btn {
+        padding: 4px 12px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-type-btn {
+        padding: 4px 10px;
+        font-size: 10px;
+    }
+}

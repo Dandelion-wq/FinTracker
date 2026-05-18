@@ -1,0 +1,65 @@
+.recent-transactions {
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #E8E5DF;
+    margin-top: 28px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.section-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2C3E2F;
+}
+
+.text-link {
+    color: #27AE60;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.text-link:hover {
+    text-decoration: underline;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table th,
+.transactions-table td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #E8E5DF;
+    font-size: 13px;
+}
+
+.transactions-table th {
+    font-weight: 600;
+    color: #7F8C8D;
+    font-size: 12px;
+}
+
+.income-text {
+    color: #27AE60;
+    font-weight: 600;
+}
+
+.expense-text {
+    color: #E74C3C;
+    font-weight: 600;
+}
+
+.empty-message {
+    text-align: center;
+    color: #BDC3C7;
+    padding: 32px;
+}
