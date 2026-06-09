@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { 
+    FiPlus, 
+    FiEdit2, 
+    FiTrash2, 
+    FiTrendingUp, 
+    FiTrendingDown,
+    FiCheck,
+    FiX
+} from 'react-icons/fi';
 import { categoriesAPI } from '../../services/api';
+import useToast from '../../hooks/useToast';
+import ToastContainer from '../UI/ToastContainer';
 import './Categories.css';
 
 function Categories() {
@@ -8,6 +19,7 @@ function Categories() {
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
+    const { toasts, removeToast, success, error: showError, warning } = useToast();
     const [newCategory, setNewCategory] = useState({
         name: '',
         type: 'expense',
@@ -26,7 +38,7 @@ function Categories() {
             setCategories(response.data);
         } catch (error) {
             console.error('Ошибка загрузки категорий:', error);
-            alert('Не удалось загрузить категории');
+            showError('Не удалось загрузить категории');
         } finally {
             setLoading(false);
         }
@@ -37,30 +49,39 @@ function Categories() {
 
     const handleAddCategory = async () => {
         if (!newCategory.name) {
-            alert('Введите название категории');
+            showError('Введите название категории');
             return;
         }
         
         try {
-            const response = await categoriesAPI.create(newCategory);
+            const dataToSend = {
+                name: newCategory.name,
+                type: newCategory.type,
+                color: newCategory.color,
+                monthlyLimit: newCategory.monthlyLimit === '' ? null : parseFloat(newCategory.monthlyLimit)
+            };
+            
+            const response = await categoriesAPI.create(dataToSend);
             setCategories([...categories, response.data]);
             setNewCategory({ name: '', type: 'expense', color: '#E74C3C', monthlyLimit: '' });
             setShowForm(false);
+            success(`Категория "${newCategory.name}" успешно создана`);
         } catch (error) {
             console.error('Ошибка создания категории:', error);
-            alert('Не удалось создать категорию');
+            showError(error.response?.data?.error || 'Не удалось создать категорию');
         }
     };
 
-    const handleDeleteCategory = async (id) => {
+    const handleDeleteCategory = async (id, name) => {
         if (!window.confirm('Вы уверены, что хотите удалить эту категорию?')) return;
         
         try {
             await categoriesAPI.delete(id);
             setCategories(categories.filter(c => c.id !== id));
+            success(`Категория "${name}" удалена`);
         } catch (error) {
             console.error('Ошибка удаления категории:', error);
-            alert('Не удалось удалить категорию');
+            showError('Не удалось удалить категорию');
         }
     };
 
@@ -69,7 +90,7 @@ function Categories() {
         setEditForm({
             name: category.name,
             color: category.color,
-            monthlyLimit: category.monthlyLimit || ''
+            monthlyLimit: category.monthlyLimit !== null ? category.monthlyLimit : ''
         });
     };
 
@@ -80,13 +101,20 @@ function Categories() {
 
     const handleEditSubmit = async (id) => {
         try {
-            const response = await categoriesAPI.update(id, editForm);
+            const dataToSend = {
+                name: editForm.name,
+                color: editForm.color,
+                monthlyLimit: editForm.monthlyLimit === '' ? null : parseFloat(editForm.monthlyLimit)
+            };
+            
+            const response = await categoriesAPI.update(id, dataToSend);
             setCategories(categories.map(c => c.id === id ? response.data : c));
             setEditingId(null);
             setEditForm({});
+            success(`Категория "${editForm.name}" обновлена`);
         } catch (error) {
             console.error('Ошибка обновления категории:', error);
-            alert('Не удалось обновить категорию');
+            showError('Не удалось обновить категорию');
         }
     };
 
@@ -101,10 +129,12 @@ function Categories() {
 
     return (
         <div className="categories-page">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
             <div className="page-header">
                 <h1 className="page-title">Категории</h1>
                 <button className="btn-add" onClick={() => setShowForm(!showForm)}>
-                    + Добавить категорию
+                    <FiPlus /> Добавить категорию
                 </button>
             </div>
 
@@ -167,7 +197,9 @@ function Categories() {
 
             <div className="categories-sections">
                 <div className="category-section">
-                    <h2 className="section-title expense-title">Расходы</h2>
+                    <h2 className="section-title expense-title">
+                        <FiTrendingDown /> Расходы
+                    </h2>
                     <div className="category-list">
                         {expenseCategories.map(category => (
                             <div key={category.id} className="category-card">
@@ -197,8 +229,12 @@ function Categories() {
                                             />
                                         </div>
                                         <div className="actions">
-                                            <button className="btn-save" onClick={() => handleEditSubmit(category.id)}>✓</button>
-                                            <button className="btn-cancel" onClick={handleCancelEdit}>✗</button>
+                                            <button className="btn-save" onClick={() => handleEditSubmit(category.id)}>
+                                                <FiCheck />
+                                            </button>
+                                            <button className="btn-cancel" onClick={handleCancelEdit}>
+                                                <FiX />
+                                            </button>
                                         </div>
                                     </>
                                 ) : (
@@ -211,8 +247,12 @@ function Categories() {
                                             {category.monthlyLimit > 0 && (
                                                 <span className="category-limit">Лимит: {category.monthlyLimit} BYN</span>
                                             )}
-                                            <button className="btn-edit" onClick={() => handleEdit(category)}>✏️</button>
-                                            <button className="btn-delete" onClick={() => handleDeleteCategory(category.id)}>🗑️</button>
+                                            <button className="btn-edit" onClick={() => handleEdit(category)}>
+                                                <FiEdit2 />
+                                            </button>
+                                            <button className="btn-delete" onClick={() => handleDeleteCategory(category.id, category.name)}>
+                                                <FiTrash2 />
+                                            </button>
                                         </div>
                                     </>
                                 )}
@@ -225,7 +265,9 @@ function Categories() {
                 </div>
 
                 <div className="category-section">
-                    <h2 className="section-title income-title">Доходы</h2>
+                    <h2 className="section-title income-title">
+                        <FiTrendingUp /> Доходы
+                    </h2>
                     <div className="category-list">
                         {incomeCategories.map(category => (
                             <div key={category.id} className="category-card">
@@ -247,8 +289,12 @@ function Categories() {
                                             />
                                         </div>
                                         <div className="actions">
-                                            <button className="btn-save" onClick={() => handleEditSubmit(category.id)}>✓</button>
-                                            <button className="btn-cancel" onClick={handleCancelEdit}>✗</button>
+                                            <button className="btn-save" onClick={() => handleEditSubmit(category.id)}>
+                                                <FiCheck />
+                                            </button>
+                                            <button className="btn-cancel" onClick={handleCancelEdit}>
+                                                <FiX />
+                                            </button>
                                         </div>
                                     </>
                                 ) : (
@@ -258,8 +304,12 @@ function Categories() {
                                             <span className="category-name">{category.name}</span>
                                         </div>
                                         <div className="category-stats">
-                                            <button className="btn-edit" onClick={() => handleEdit(category)}>✏️</button>
-                                            <button className="btn-delete" onClick={() => handleDeleteCategory(category.id)}>🗑️</button>
+                                            <button className="btn-edit" onClick={() => handleEdit(category)}>
+                                                <FiEdit2 />
+                                            </button>
+                                            <button className="btn-delete" onClick={() => handleDeleteCategory(category.id, category.name)}>
+                                                <FiTrash2 />
+                                            </button>
                                         </div>
                                     </>
                                 )}

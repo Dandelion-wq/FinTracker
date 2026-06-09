@@ -18,6 +18,9 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-export:hover {
@@ -146,6 +149,9 @@
     cursor: pointer;
     font-size: 16px;
     padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-edit {
@@ -178,4 +184,201 @@
     text-align: center;
     color: #BDC3C7;
     padding: 40px;
+}
+
+.search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7F8C8D;
+    font-size: 14px;
+}
+
+.search-wrapper input {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+/* ============================================
+   МОБИЛЬНАЯ ВЕРСИЯ - ПОЛНОСТЬЮ ПЕРЕРАБОТАНА
+   ============================================ */
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+    
+    .btn-export {
+        justify-content: center;
+    }
+    
+    .transactions-summary {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .summary-card {
+        padding: 16px;
+    }
+    
+    .summary-card strong {
+        font-size: 20px;
+    }
+    
+    .filter-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-bar select,
+    .filter-bar .search-wrapper {
+        width: 100%;
+    }
+    
+    /* Карточный вид для мобильных вместо таблицы */
+    .transactions-table-container {
+        overflow: visible;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    
+    .transactions-table-full {
+        display: block;
+        min-width: auto;
+    }
+    
+    .transactions-table-full thead {
+        display: none;
+    }
+    
+    .transactions-table-full tbody {
+        display: block;
+    }
+    
+    .transactions-table-full tr {
+        display: block;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E8E5DF;
+        margin-bottom: 12px;
+        padding: 16px;
+        position: relative;
+    }
+    
+    .transactions-table-full td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #E8E5DF;
+        font-size: 13px;
+    }
+    
+    .transactions-table-full td:last-child {
+        border-bottom: none;
+        justify-content: flex-end;
+        gap: 16px;
+        margin-top: 8px;
+    }
+    
+    .transactions-table-full td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #7F8C8D;
+        font-size: 12px;
+        margin-right: 12px;
+    }
+    
+    /* Убираем стандартную структуру таблицы */
+    .transactions-table-full td:first-child::before {
+        content: "Дата:";
+    }
+    
+    .transactions-table-full td:nth-child(2)::before {
+        content: "Тип:";
+    }
+    
+    .transactions-table-full td:nth-child(3)::before {
+        content: "Категория:";
+    }
+    
+    .transactions-table-full td:nth-child(4)::before {
+        content: "Счет:";
+    }
+    
+    .transactions-table-full td:nth-child(5)::before {
+        content: "Описание:";
+    }
+    
+    .transactions-table-full td:nth-child(6)::before {
+        content: "Сумма:";
+    }
+    
+    /* Редактирование в карточном виде */
+    .transactions-table-full td input,
+    .transactions-table-full td select {
+        width: auto;
+        flex: 1;
+        max-width: 180px;
+    }
+    
+    .transactions-table-full .actions {
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    
+    .actions button {
+        font-size: 18px;
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .summary-card {
+        padding: 12px;
+    }
+    
+    .summary-card strong {
+        font-size: 18px;
+    }
+    
+    .summary-card span {
+        font-size: 12px;
+    }
+    
+    .transactions-table-full tr {
+        padding: 12px;
+    }
+    
+    .transactions-table-full td {
+        font-size: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .transactions-table-full td::before {
+        font-size: 11px;
+        width: 80px;
+    }
+    
+    .transactions-table-full td input,
+    .transactions-table-full td select {
+        font-size: 12px;
+        padding: 6px 8px;
+        max-width: 150px;
+    }
 }

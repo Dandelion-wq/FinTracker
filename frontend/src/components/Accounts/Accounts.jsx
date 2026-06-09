@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import {
+    FiDollarSign,
+    FiCreditCard,
+    FiSmartphone,
+    FiHome,
+    FiPlus,
+    FiEdit2,
+    FiTrash2,
+    FiCheck,
+    FiX
+} from 'react-icons/fi';
 import { accountsAPI } from '../../services/api';
+import useToast from '../../hooks/useToast';
+import ToastContainer from '../UI/ToastContainer';
 import './Accounts.css';
+
+const accountIcons = {
+    cash: <FiDollarSign size={24} />,
+    card: <FiCreditCard size={24} />,
+    ewallet: <FiSmartphone size={24} />,
+    deposit: <FiHome size={24} />
+};
 
 function Accounts() {
     const [accounts, setAccounts] = useState([]);
@@ -8,6 +28,7 @@ function Accounts() {
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
+    const { toasts, removeToast, success, error: showError } = useToast();
     const [newAccount, setNewAccount] = useState({
         name: '',
         type: 'cash',
@@ -27,7 +48,7 @@ function Accounts() {
             setAccounts(response.data);
         } catch (error) {
             console.error('Ошибка загрузки счетов:', error);
-            alert('Не удалось загрузить счета');
+            showError('Не удалось загрузить счета');
         } finally {
             setLoading(false);
         }
@@ -43,19 +64,9 @@ function Accounts() {
         return types[type] || type;
     };
 
-    const getIconByType = (type) => {
-        const icons = {
-            cash: '💵',
-            card: '💳',
-            ewallet: '📱',
-            deposit: '🏦'
-        };
-        return icons[type] || '💰';
-    };
-
     const handleAddAccount = async () => {
         if (!newAccount.name) {
-            alert('Введите название счета');
+            showError('Введите название счета');
             return;
         }
 
@@ -67,21 +78,23 @@ function Accounts() {
             setAccounts([...accounts, response.data]);
             setNewAccount({ name: '', type: 'cash', currency: 'BYN', balance: '', icon: '💵' });
             setShowForm(false);
+            success(`Счет "${newAccount.name}" успешно создан`);
         } catch (error) {
             console.error('Ошибка создания счета:', error);
-            alert('Не удалось создать счет');
+            showError('Не удалось создать счет');
         }
     };
 
-    const handleDeleteAccount = async (id) => {
+    const handleDeleteAccount = async (id, name) => {
         if (!window.confirm('Вы уверены, что хотите удалить этот счет? Все связанные транзакции также будут удалены.')) return;
 
         try {
             await accountsAPI.delete(id);
             setAccounts(accounts.filter(a => a.id !== id));
+            success(`Счет "${name}" удален`);
         } catch (error) {
             console.error('Ошибка удаления счета:', error);
-            alert('Не удалось удалить счет');
+            showError('Не удалось удалить счет');
         }
     };
 
@@ -106,9 +119,10 @@ function Accounts() {
             setAccounts(accounts.map(a => a.id === id ? response.data : a));
             setEditingId(null);
             setEditForm({});
+            success(`Счет "${editForm.name}" обновлен`);
         } catch (error) {
             console.error('Ошибка обновления счета:', error);
-            alert('Не удалось обновить счет');
+            showError('Не удалось обновить счет');
         }
     };
 
@@ -120,12 +134,14 @@ function Accounts() {
     const handleTypeChange = (type) => {
         setNewAccount({
             ...newAccount,
-            type,
-            icon: getIconByType(type)
+            type
         });
     };
 
-    const totalBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+    const totalBalance = accounts.reduce((sum, acc) => {
+        const balance = typeof acc.balance === 'number' ? acc.balance : parseFloat(acc.balance) || 0;
+        return sum + balance;
+    }, 0);
 
     if (loading) {
         return <div className="loading-container">Загрузка счетов...</div>;
@@ -133,10 +149,12 @@ function Accounts() {
 
     return (
         <div className="accounts-page">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
             <div className="page-header">
                 <h1 className="page-title">Счета</h1>
                 <button className="btn-add" onClick={() => setShowForm(!showForm)}>
-                    + Добавить счет
+                    <FiPlus /> Добавить счет
                 </button>
             </div>
 
@@ -199,46 +217,58 @@ function Accounts() {
                 {accounts.map(account => (
                     <div key={account.id} className="account-card">
                         {editingId === account.id ? (
-                            <div className="account-edit-form">
-                                <div className="edit-fields">
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={editForm.name}
-                                        onChange={handleEditChange}
-                                        placeholder="Название"
-                                    />
-                                    <select name="type" value={editForm.type} onChange={handleEditChange}>
-                                        <option value="cash">Наличные</option>
-                                        <option value="card">Банковская карта</option>
-                                        <option value="ewallet">Электронный кошелек</option>
-                                        <option value="deposit">Депозит</option>
-                                    </select>
-                                    <select name="currency" value={editForm.currency} onChange={handleEditChange}>
-                                        <option value="BYN">BYN</option>
-                                        <option value="USD">USD</option>
-                                        <option value="EUR">EUR</option>
-                                        <option value="RUB">RUB</option>
-                                    </select>
+                            <>
+                                <div className="account-edit-form">
+                                    <div className="edit-fields">
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={editForm.name}
+                                            onChange={handleEditChange}
+                                            placeholder="Название"
+                                        />
+                                        <select name="type" value={editForm.type} onChange={handleEditChange}>
+                                            <option value="cash">Наличные</option>
+                                            <option value="card">Банковская карта</option>
+                                            <option value="ewallet">Электронный кошелек</option>
+                                            <option value="deposit">Депозит</option>
+                                        </select>
+                                        <select name="currency" value={editForm.currency} onChange={handleEditChange}>
+                                            <option value="BYN">BYN</option>
+                                            <option value="USD">USD</option>
+                                            <option value="EUR">EUR</option>
+                                            <option value="RUB">RUB</option>
+                                        </select>
+                                    </div>
+                                    <div className="actions">
+                                        <button className="btn-save" onClick={() => handleEditSubmit(account.id)}>
+                                            <FiCheck />
+                                        </button>
+                                        <button className="btn-cancel" onClick={handleCancelEdit}>
+                                            <FiX />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="actions">
-                                    <button className="btn-save" onClick={() => handleEditSubmit(account.id)}>✓</button>
-                                    <button className="btn-cancel" onClick={handleCancelEdit}>✗</button>
-                                </div>
-                            </div>
+                            </>
                         ) : (
                             <>
-                                <div className="account-icon">{account.icon}</div>
+                                <div className="account-icon">
+                                    {accountIcons[account.type] || <FiDollarSign size={24} />}
+                                </div>
                                 <div className="account-info">
                                     <div className="account-name">{account.name}</div>
                                     <div className="account-type">{getTypeName(account.type)}</div>
                                 </div>
                                 <div className="account-balance">
-                                    {Number(account.balance).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {account.currency}
+                                    {Number(account.balance).toLocaleString()} {account.currency}
                                 </div>
                                 <div className="account-actions">
-                                    <button className="btn-edit" onClick={() => handleEdit(account)}>✏️</button>
-                                    <button className="btn-delete" onClick={() => handleDeleteAccount(account.id)}>🗑️</button>
+                                    <button className="btn-edit" onClick={() => handleEdit(account)}>
+                                        <FiEdit2 />
+                                    </button>
+                                    <button className="btn-delete" onClick={() => handleDeleteAccount(account.id, account.name)}>
+                                        <FiTrash2 />
+                                    </button>
                                 </div>
                             </>
                         )}
@@ -251,7 +281,7 @@ function Accounts() {
 
             <div className="total-balance">
                 <span>Общий баланс всех счетов</span>
-                <strong>{Number(totalBalance).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BYN</strong>
+                <strong>{!isNaN(totalBalance) && totalBalance !== 0 ? totalBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} BYN</strong>
             </div>
         </div>
     );

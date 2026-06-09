@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { 
+    FiMail, FiLock, FiUser, FiEye, FiEyeOff, 
+    FiUserPlus, FiCheckCircle, FiSend 
+} from 'react-icons/fi';
 import { authAPI } from '../../services/api';
 import './Auth.css';
 
@@ -106,14 +110,17 @@ function Register() {
                     <form onSubmit={handleVerifyEmail}>
                         <div className="form-group">
                             <label>Код подтверждения</label>
-                            <input
-                                type="text"
-                                value={verificationCode}
-                                onChange={(e) => setVerificationCode(e.target.value)}
-                                placeholder="Введите 6-значный код"
-                                maxLength={6}
-                                required
-                            />
+                            <div className="input-wrapper">
+                                <FiCheckCircle className="input-icon" />
+                                <input
+                                    type="text"
+                                    value={verificationCode}
+                                    onChange={(e) => setVerificationCode(e.target.value)}
+                                    placeholder="Введите 6-значный код"
+                                    maxLength={6}
+                                    required
+                                />
+                            </div>
                         </div>
                         <button type="submit" className="auth-btn" disabled={loading}>
                             {loading ? 'Проверка...' : 'Подтвердить email'}
@@ -122,7 +129,7 @@ function Register() {
                     <p className="auth-link">
                         Не пришел код?{' '}
                         <button onClick={handleResendCode} className="link-button" disabled={loading}>
-                            Отправить снова
+                            <FiSend /> Отправить снова
                         </button>
                     </p>
                     <p className="auth-link">
@@ -144,51 +151,59 @@ function Register() {
                     <div className="form-row">
                         <div className="form-group">
                             <label>Фамилия</label>
-                            <input
-                                type="text"
-                                name="lastName"
-                                value={formData.lastName}
-                                onChange={handleChange}
-                                placeholder="Иванов"
-                                required
-                                disabled={loading}
-                            />
+                            <div className="input-wrapper">
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    placeholder="Иванов"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
                         </div>
                         <div className="form-group">
                             <label>Имя</label>
-                            <input
-                                type="text"
-                                name="firstName"
-                                value={formData.firstName}
-                                onChange={handleChange}
-                                placeholder="Иван"
-                                required
-                                disabled={loading}
-                            />
+                            <div className="input-wrapper">
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                    placeholder="Иван"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
                         </div>
                     </div>
                     <div className="form-group">
                         <label>Отчество (необязательно)</label>
-                        <input
-                            type="text"
-                            name="patronymic"
-                            value={formData.patronymic}
-                            onChange={handleChange}
-                            placeholder="Иванович"
-                            disabled={loading}
-                        />
+                        <div className="input-wrapper">
+                            <input
+                                type="text"
+                                name="patronymic"
+                                value={formData.patronymic}
+                                onChange={handleChange}
+                                placeholder="Иванович"
+                                disabled={loading}
+                            />
+                        </div>
                     </div>
                     <div className="form-group">
                         <label>Электронная почта</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="ivan@example.com"
-                            required
-                            disabled={loading}
-                        />
+                        <div className="input-wrapper">
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="ivan@example.com"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
                     </div>
                     <div className="form-row">
                         <div className="form-group password-group">
@@ -209,7 +224,7 @@ function Register() {
                                     onClick={() => setShowPassword(!showPassword)}
                                     tabIndex="-1"
                                 >
-                                    {showPassword ? '🙈' : '👁️'}
+                                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                                 </button>
                             </div>
                         </div>
@@ -231,13 +246,13 @@ function Register() {
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                     tabIndex="-1"
                                 >
-                                    {showConfirmPassword ? '🙈' : '👁️'}
+                                    {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                                 </button>
                             </div>
                         </div>
                     </div>
                     <button type="submit" className="auth-btn" disabled={loading}>
-                        {loading ? 'Регистрация...' : 'Зарегистрироваться'}
+                        {loading ? 'Регистрация...' : <><FiUserPlus /> Зарегистрироваться</>}
                     </button>
                 </form>
                 <p className="auth-link">

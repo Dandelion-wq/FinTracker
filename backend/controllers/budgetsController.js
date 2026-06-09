@@ -1,25 +1,67 @@
-const { Budget, Transaction, Category } = require('../models');
+const { Budget, Transaction } = require('../models');
 const { Op } = require('sequelize');
 
 // Получить все бюджеты пользователя
 exports.getAll = async (req, res) => {
     try {
         const userId = req.user.userId;
+
         const budgets = await Budget.findAll({
             where: { userId },
-            order: [['startDate', 'DESC']]
+            order: [['type', 'ASC'], ['startDate', 'DESC']]
         });
-        
-        // Для каждого бюджета рассчитываем текущие расходы
-        const budgetsWithSpent = await Promise.all(budgets.map(async (budget) => {
-            const currentSpent = await calculateCurrentSpent(userId, budget);
+
+        const budgetsWithCurrent = await Promise.all(budgets.map(async (budget) => {
+            let currentAmount = 0;
+
+            if (budget.type === 'expense') {
+                const transactions = await Transaction.findAll({
+                    where: {
+                        userId,
+                        type: 'expense',
+                        date: {
+                            [Op.between]: [budget.startDate, budget.endDate]
+                        },
+                        budgetId: null  // Только транзакции без привязки к бюджету
+                    }
+                });
+                currentAmount = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            }
+            else if (budget.type === 'saving') {
+                // Суммируем все транзакции с savingAction = 'deposit' для этого бюджета
+                const transactions = await Transaction.findAll({
+                    where: {
+                        userId,
+                        budgetId: budget.id,
+                        savingAction: 'deposit',
+                        date: {
+                            [Op.between]: [budget.startDate, budget.endDate]
+                        }
+                    }
+                });
+                currentAmount = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            } else {
+                // Для накопительного бюджета считаем транзакции с savingAction = 'deposit'
+                const transactions = await Transaction.findAll({
+                    where: {
+                        userId,
+                        budgetId: budget.id,
+                        savingAction: 'deposit',
+                        date: {
+                            [Op.between]: [budget.startDate, budget.endDate]
+                        }
+                    }
+                });
+                currentAmount = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            }
+
             return {
                 ...budget.toJSON(),
-                currentSpent
+                currentAmount
             };
         }));
-        
-        res.json(budgetsWithSpent);
+
+        res.json(budgetsWithCurrent);
     } catch (error) {
         console.error('Get budgets error:', error);
         res.status(500).json({ error: 'Ошибка при получении бюджетов' });
@@ -30,20 +72,18 @@ exports.getAll = async (req, res) => {
 exports.create = async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { name, periodType, startDate, endDate, totalLimit } = req.body;
-        
-        if (!name || !periodType || !startDate || !totalLimit) {
-            return res.status(400).json({ error: 'Название, тип периода, дата начала и лимит обязательны' });
+        const { name, type, periodType, startDate, endDate, targetAmount } = req.body;
+
+        if (!name || !periodType || !startDate || !targetAmount) {
+            return res.status(400).json({ error: 'Название, тип периода, дата начала и целевая сумма обязательны' });
         }
-        
-        if (totalLimit <= 0) {
-            return res.status(400).json({ error: 'Лимит должен быть больше 0' });
+
+        if (targetAmount <= 0) {
+            return res.status(400).json({ error: 'Целевая сумма должна быть больше 0' });
         }
-        
-        // Для произвольного периода проверяем endDate
+
         let finalEndDate = endDate;
         if (periodType !== 'custom') {
-            // Рассчитываем дату окончания в зависимости от типа периода
             const start = new Date(startDate);
             finalEndDate = new Date(start);
             switch (periodType) {
@@ -59,28 +99,23 @@ exports.create = async (req, res) => {
             }
             finalEndDate = finalEndDate.toISOString().split('T')[0];
         }
-        
+
         if (!finalEndDate) {
             return res.status(400).json({ error: 'Дата окончания обязательна' });
         }
-        
+
         const budget = await Budget.create({
             userId,
             name,
+            type: type || 'expense',
             periodType,
             startDate,
             endDate: finalEndDate,
-            totalLimit,
-            currentSpent: 0
+            targetAmount,
+            currentAmount: 0
         });
-        
-        // Рассчитываем текущие расходы
-        const currentSpent = await calculateCurrentSpent(userId, budget);
-        
-        res.status(201).json({
-            ...budget.toJSON(),
-            currentSpent
-        });
+
+        res.status(201).json(budget);
     } catch (error) {
         console.error('Create budget error:', error);
         res.status(500).json({ error: 'Ошибка при создании бюджета' });
@@ -92,16 +127,16 @@ exports.update = async (req, res) => {
     try {
         const userId = req.user.userId;
         const budgetId = req.params.id;
-        const { name, periodType, startDate, endDate, totalLimit } = req.body;
-        
+        const { name, type, periodType, startDate, endDate, targetAmount, currentAmount } = req.body;
+
         const budget = await Budget.findOne({
             where: { id: budgetId, userId }
         });
-        
+
         if (!budget) {
             return res.status(404).json({ error: 'Бюджет не найден' });
         }
-        
+
         let finalEndDate = endDate;
         if (periodType && periodType !== 'custom' && startDate) {
             const start = new Date(startDate);
@@ -119,21 +154,24 @@ exports.update = async (req, res) => {
             }
             finalEndDate = finalEndDate.toISOString().split('T')[0];
         }
-        
-        await budget.update({
+
+        const updateData = {
             name: name || budget.name,
+            type: type || budget.type,
             periodType: periodType || budget.periodType,
             startDate: startDate || budget.startDate,
             endDate: finalEndDate || budget.endDate,
-            totalLimit: totalLimit || budget.totalLimit
-        });
-        
-        const currentSpent = await calculateCurrentSpent(userId, budget);
-        
-        res.json({
-            ...budget.toJSON(),
-            currentSpent
-        });
+            targetAmount: targetAmount || budget.targetAmount
+        };
+
+        // Если передано currentAmount, обновляем его
+        if (currentAmount !== undefined) {
+            updateData.currentAmount = currentAmount;
+        }
+
+        await budget.update(updateData);
+
+        res.json(budget);
     } catch (error) {
         console.error('Update budget error:', error);
         res.status(500).json({ error: 'Ошибка при обновлении бюджета' });
@@ -145,15 +183,15 @@ exports.delete = async (req, res) => {
     try {
         const userId = req.user.userId;
         const budgetId = req.params.id;
-        
+
         const budget = await Budget.findOne({
             where: { id: budgetId, userId }
         });
-        
+
         if (!budget) {
             return res.status(404).json({ error: 'Бюджет не найден' });
         }
-        
+
         await budget.destroy();
         res.json({ message: 'Бюджет удален' });
     } catch (error) {
@@ -162,60 +200,96 @@ exports.delete = async (req, res) => {
     }
 };
 
-// Вспомогательная функция для расчета текущих расходов по бюджету
-async function calculateCurrentSpent(userId, budget) {
-    const transactions = await Transaction.findAll({
-        where: {
-            userId,
-            type: 'expense',
-            date: {
-                [Op.between]: [budget.startDate, budget.endDate]
-            }
-        }
-    });
-    
-    const total = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    return total;
-}
-
 // Получить статистику по бюджетам
 exports.getStats = async (req, res) => {
     try {
         const userId = req.user.userId;
         const now = new Date();
-        const currentMonth = now.toISOString().slice(0, 7);
-        
-        // Получаем активные бюджеты (текущий месяц)
-        const activeBudgets = await Budget.findAll({
+
+        const budgets = await Budget.findAll({
             where: {
                 userId,
                 startDate: { [Op.lte]: now },
                 endDate: { [Op.gte]: now }
             }
         });
-        
-        const budgetsWithStats = await Promise.all(activeBudgets.map(async (budget) => {
-            const currentSpent = await calculateCurrentSpent(userId, budget);
-            const progress = (currentSpent / budget.totalLimit) * 100;
-            const remaining = budget.totalLimit - currentSpent;
-            
+
+        const budgetsWithStats = await Promise.all(budgets.map(async (budget) => {
+            let currentAmount = 0;
+            if (budget.type === 'expense') {
+                const transactions = await Transaction.findAll({
+                    where: {
+                        userId,
+                        type: 'expense',
+                        date: { [Op.between]: [budget.startDate, budget.endDate] },
+                        budgetId: null
+                    }
+                });
+                currentAmount = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            } else {
+                const transactions = await Transaction.findAll({
+                    where: {
+                        userId,
+                        budgetId: budget.id,
+                        savingAction: 'deposit',
+                        date: { [Op.between]: [budget.startDate, budget.endDate] }
+                    }
+                });
+                currentAmount = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            }
+
+            const progress = (currentAmount / budget.targetAmount) * 100;
+            const remaining = budget.targetAmount - currentAmount;
+            const isCompleted = currentAmount >= budget.targetAmount;
+
             return {
                 id: budget.id,
                 name: budget.name,
-                totalLimit: budget.totalLimit,
-                currentSpent,
+                type: budget.type,
+                targetAmount: budget.targetAmount,
+                currentAmount,
                 progress: Math.min(100, progress),
                 remaining,
-                isOverBudget: currentSpent > budget.totalLimit,
+                isCompleted,
                 periodType: budget.periodType,
                 startDate: budget.startDate,
                 endDate: budget.endDate
             };
         }));
-        
+
         res.json(budgetsWithStats);
     } catch (error) {
         console.error('Get budget stats error:', error);
         res.status(500).json({ error: 'Ошибка при получении статистики бюджетов' });
+    }
+};
+
+// Обновить сумму накоплений (вызывается из транзакций)
+exports.updateSavingAmount = async (req, res) => {
+    try {
+        const { budgetId, amount, action } = req.body;
+        const userId = req.user.userId;
+
+        const budget = await Budget.findOne({
+            where: { id: budgetId, userId, type: 'saving' }
+        });
+
+        if (!budget) {
+            return res.status(404).json({ error: 'Накопительный бюджет не найден' });
+        }
+
+        let newCurrentAmount = budget.currentAmount;
+        if (action === 'deposit') {
+            newCurrentAmount = budget.currentAmount + amount;
+        } else if (action === 'withdrawal') {
+            newCurrentAmount = Math.max(0, budget.currentAmount - amount);
+        }
+
+        await budget.update({ currentAmount: newCurrentAmount });
+
+        res.json({ success: true, currentAmount: newCurrentAmount });
+    } catch (error) {
+        console.error('Update saving amount error:', error);
+        res.status(500).json({ error: 'Ошибка при обновлении суммы накоплений' });
     }
 };

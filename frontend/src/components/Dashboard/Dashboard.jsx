@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { FiBarChart2 } from 'react-icons/fi';
 import BalanceCard from './BalanceCard';
 import AddTransactionForm from './AddTransactionForm';
 import RecentTransactions from './RecentTransactions';
 import ExpenseChart from './ExpenseChart';
-import { transactionsAPI, accountsAPI, categoriesAPI } from '../../services/api';
+import { transactionsAPI, accountsAPI, categoriesAPI, budgetsAPI } from '../../services/api';
+import useToast from '../../hooks/useToast';
+import ToastContainer from '../UI/ToastContainer';
 import './Dashboard.css';
 
 function Dashboard() {
     const [transactions, setTransactions] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [budgets, setBudgets] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({ totalIncome: 0, totalExpense: 0, balance: 0 });
+    const { toasts, removeToast, success, error: showError, warning } = useToast();
 
     useEffect(() => {
         loadData();
@@ -20,38 +24,114 @@ function Dashboard() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [transactionsRes, accountsRes, categoriesRes, statsRes] = await Promise.all([
+            const [transactionsRes, accountsRes, categoriesRes, budgetsRes] = await Promise.all([
                 transactionsAPI.getAll(),
                 accountsAPI.getAll(),
                 categoriesAPI.getAll(),
-                transactionsAPI.getStats('month')
+                budgetsAPI.getAll()
             ]);
             setTransactions(transactionsRes.data);
             setAccounts(accountsRes.data);
             setCategories(categoriesRes.data);
-            setStats(statsRes.data);
+            setBudgets(budgetsRes.data);
         } catch (error) {
             console.error('Ошибка загрузки данных:', error);
+            showError('Не удалось загрузить данные');
         } finally {
             setLoading(false);
         }
     };
 
-    const calculateTotalBalance = () => {
-        if (!accounts || accounts.length === 0) return 0;
-        const total = accounts.reduce((sum, account) => sum + (Number(account.balance) || 0), 0);
-        return total;
+    // Проверка бюджетов после добавления транзакции
+    const checkBudgetsAfterTransaction = (newTransaction, currentBudgets, allTransactions) => {
+        const now = new Date();
+        const transactionDate = new Date(newTransaction.date);
+
+        //проверка расходных бюджетов
+        const expenseBudgets = currentBudgets.filter(b => b.type === 'expense');
+        for (const budget of expenseBudgets) {
+            const startDate = new Date(budget.startDate);
+            const endDate = new Date(budget.endDate);
+
+            if (transactionDate >= startDate && transactionDate <= endDate && newTransaction.type === 'expense') {
+                const budgetTransactions = allTransactions.filter(t =>
+                    t.type === 'expense' &&
+                    new Date(t.date) >= startDate &&
+                    new Date(t.date) <= endDate
+                );
+                const totalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+                if (totalSpent > budget.targetAmount) {
+                    warning(`Бюджет "${budget.name}" превышен! Потрачено ${totalSpent.toLocaleString()} BYN при лимите ${budget.targetAmount.toLocaleString()} BYN`);
+                } else if (totalSpent === budget.targetAmount) {
+                    success(`Бюджет "${budget.name}" достигнут! Потрачено ровно ${totalSpent.toLocaleString()} BYN`);
+                }
+            }
+        }
+
+        //проверка накопительных бюджетов
+        const savingBudgets = currentBudgets.filter(b => b.type === 'saving');
+        for (const budget of savingBudgets) {
+            const startDate = new Date(budget.startDate);
+            const endDate = new Date(budget.endDate);
+
+            if (transactionDate >= startDate && transactionDate <= endDate && newTransaction.savingAction) {
+                const budgetTransactions = allTransactions.filter(t =>
+                    t.savingAction &&
+                    t.budgetId === budget.id &&
+                    new Date(t.date) >= startDate &&
+                    new Date(t.date) <= endDate
+                );
+                const totalSaved = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+                if (totalSaved >= budget.targetAmount && (budget.currentAmount || 0) < budget.targetAmount) {
+                    success(`Поздравляем! Вы достигли цели "${budget.name}"! Накоплено ${totalSaved.toLocaleString()} BYN из ${budget.targetAmount.toLocaleString()} BYN`);
+                }
+            }
+        }
     };
 
-    const handleAddTransaction = async (newTransaction) => {
+    const handleAddTransaction = async (transactionData, selectedBudget, savingAction) => {
+        console.log('handleAddTransaction получила:', { transactionData, selectedBudget, savingAction });
+
         try {
-            const response = await transactionsAPI.create(newTransaction);
-            setTransactions([response.data, ...transactions]);
+            let response;
+
+            if (selectedBudget && selectedBudget.type === 'saving') {
+                console.log('🎯 Это накопительный бюджет!');
+                const transactionToSend = {
+                    amount: transactionData.amount,
+                    accountId: transactionData.accountId,
+                    date: transactionData.date,
+                    description: transactionData.description,
+                    type: 'expense',
+                    savingAction: 'deposit',      // ← обязательно
+                    budgetId: selectedBudget.id    // ← обязательно
+                };
+                console.log('📤 Отправляем на сервер:', transactionToSend);
+                response = await transactionsAPI.create(transactionToSend);
+            } else {
+                response = await transactionsAPI.create(transactionData);
+            }
+
+            console.log('✅ Ответ сервера:', response.data);
+
+            // Обновляем все данные
             await loadData();
+
         } catch (error) {
-            console.error('Ошибка добавления транзакции:', error);
-            alert(error.response?.data?.error || 'Ошибка при добавлении транзакции');
+            console.error('❌ Ошибка:', error);
+            showError(error.response?.data?.error || 'Ошибка при добавлении транзакции');
         }
+    };
+
+    const calculateTotalBalance = () => {
+        if (!accounts || accounts.length === 0) return 0;
+        const total = accounts.reduce((sum, account) => {
+            const balance = typeof account.balance === 'number' ? account.balance : parseFloat(account.balance) || 0;
+            return sum + balance;
+        }, 0);
+        return total;
     };
 
     const getCategoryName = (categoryId) => {
@@ -67,7 +147,10 @@ function Dashboard() {
     if (loading) {
         return (
             <div className="dashboard">
-                <h1 className="page-title">Главная</h1>
+                <h1 className="page-title">
+                    <FiBarChart2 className="page-icon" />
+                    Главная
+                </h1>
                 <div className="loading-container">Загрузка данных...</div>
             </div>
         );
@@ -75,7 +158,12 @@ function Dashboard() {
 
     return (
         <div className="dashboard">
-            <h1 className="page-title">Главная</h1>
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+            <h1 className="page-title">
+                <FiBarChart2 className="page-icon" />
+                Главная
+            </h1>
 
             <BalanceCard totalBalance={calculateTotalBalance()} />
 
@@ -84,6 +172,7 @@ function Dashboard() {
                     onAddTransaction={handleAddTransaction}
                     accounts={accounts || []}
                     categories={categories || []}
+                    budgets={budgets || []}
                 />
                 <ExpenseChart transactions={transactions || []} categories={categories || []} />
             </div>

@@ -13,12 +13,27 @@ body {
 .app {
     display: flex;
     min-height: 100vh;
+    position: relative;
 }
 
 .main-content {
     flex: 1;
-    margin-left: 260px;
     padding: 24px 32px;
+    transition: all 0.3s ease;
+    min-height: 100vh;
+    width: calc(100% - 260px);
+}
+
+/* Десктопная версия */
+.main-content.desktop-view {
+    width: calc(100% - 260px);
+}
+
+/* Мобильная версия */
+.main-content.mobile-view {
+    margin-left: 0;
+    width: 100%;
+    padding: 70px 16px 20px 16px;
 }
 
 .page-title {
@@ -26,28 +41,232 @@ body {
     font-weight: 600;
     margin-bottom: 24px;
     color: #2C3E2F;
+    display: flex;
+    align-items: center;
 }
 
-/* Мобильная адаптация */
+/* Кнопка бургер-меню */
+.menu-toggle {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1001;
+    background: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+}
+
+.menu-toggle:hover {
+    background-color: #FDFBF7;
+    border-color: #2ECC71;
+}
+
+/* Затемнение фона при открытом меню */
+.menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    transition: opacity 0.3s ease;
+}
+
+.menu-overlay.open {
+    display: block;
+}
+
+/* Мобильные устройства */
 @media (max-width: 768px) {
-    .main-content {
-        margin-left: 0;
-        padding: 16px;
-        padding-bottom: 80px;
+    .menu-toggle {
+        display: block;
     }
     
     .page-title {
-        font-size: 24px;
+        font-size: 22px;
         margin-bottom: 16px;
     }
 }
 
 @media (max-width: 480px) {
-    .main-content {
-        padding: 12px;
+    .main-content.mobile-view {
+        padding: 60px 12px 16px 12px;
     }
     
     .page-title {
         font-size: 20px;
+    }
+    
+    .menu-toggle {
+        padding: 8px 12px;
+        font-size: 20px;
+    }
+}
+
+/* Десктопная версия - скрываем оверлей */
+@media (min-width: 769px) {
+    .menu-overlay {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   ГЛОБАЛЬНЫЕ СТИЛИ ДЛЯ ИКОНОК
+   ============================================ */
+
+svg, .icon {
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-add svg,
+.btn-export svg,
+.btn-submit svg,
+.auth-btn svg {
+    margin-right: 8px;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+}
+
+.account-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.input-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.page-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    color: #27AE60;
+}
+
+.summary-card svg {
+    width: 28px;
+    height: 28px;
+    margin-right: 12px;
+}
+
+.sidebar-logo svg {
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+    color: #27AE60;
+}
+
+.user-info .user-icon {
+    width: 32px;
+    height: 32px;
+    color: #27AE60;
+}
+
+.form-group .input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: #94A3B8;
+    pointer-events: none;
+}
+
+.password-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.category-card .btn-edit svg,
+.category-card .btn-delete svg,
+.account-card .btn-edit svg,
+.account-card .btn-delete svg,
+.budget-card .btn-delete svg {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+/* ============================================
+   ВЫРАВНИВАНИЕ КНОПОК
+   ============================================ */
+
+.btn-add,
+.btn-export,
+.btn-submit,
+.auth-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-edit,
+.btn-delete,
+.btn-save,
+.btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+.nav-item,
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ============================================
+   АДАПТИВНЫЕ РАЗМЕРЫ ИКОНОК
+   ============================================ */
+
+@media (max-width: 768px) {
+    .nav-item svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .sidebar-logo svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .summary-card svg {
+        width: 22px;
+        height: 22px;
+    }
+    
+    .account-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .page-icon {
+        width: 20px;
+        height: 20px;
     }
 }

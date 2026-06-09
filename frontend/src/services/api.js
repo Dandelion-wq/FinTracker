@@ -23,7 +23,7 @@ const api = axios.create({
     }
 });
 
-// Перехватчик для добавления access токена
+//перехватчик для добавления access токена
 api.interceptors.request.use(
     (config) => {
         const accessToken = localStorage.getItem('accessToken');
@@ -35,13 +35,21 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Перехватчик для обработки ошибок и обновления токенов
+//перехватчик для обработки ошибок и обновления токенов
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') ||
+                              originalRequest?.url?.includes('/auth/register') ||
+                              originalRequest?.url?.includes('/auth/refresh-token') ||
+                              originalRequest?.url?.includes('/auth/forgot-password') ||
+                              originalRequest?.url?.includes('/auth/reset-password');
+        if (isAuthEndpoint || error.response?.status !== 401) {
+            return Promise.reject(error);
+        }
+    
+        if (!originalRequest._retry) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -89,7 +97,6 @@ api.interceptors.response.use(
     }
 );
 
-// Auth API
 export const authAPI = {
     register: (data) => api.post('/auth/register', data),
     verifyEmail: (data) => api.post('/auth/verify-email', data),

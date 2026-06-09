@@ -5,11 +5,11 @@ const { sendVerificationCode } = require('../config/mailer');
 const generateCode = require('../utils/generateCode');
 require('dotenv').config();
 
-// Константы для токенов
+//константы для токенов для токенов
 const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY = 30 * 24 * 60 * 60 * 1000; // 30 дней в миллисекундах
+const REFRESH_TOKEN_EXPIRY = 30 * 24 * 60 * 60 * 1000; 
 
-// Генерация access токена
+//генерация access токена
 const generateAccessToken = (user) => {
     return jwt.sign(
         { userId: user.id, email: user.email },
@@ -18,7 +18,7 @@ const generateAccessToken = (user) => {
     );
 };
 
-// Генерация refresh токена
+//генерация refresh токена
 const generateRefreshToken = () => {
     return jwt.sign(
         { random: Math.random().toString() },
@@ -27,7 +27,7 @@ const generateRefreshToken = () => {
     );
 };
 
-// Базовые категории для новых пользователей
+//базовые категории
 const DEFAULT_CATEGORIES = [
     { name: 'Продукты', type: 'expense', color: '#E74C3C', icon: '🥑', isDefault: true },
     { name: 'Транспорт', type: 'expense', color: '#F39C12', icon: '🚗', isDefault: true },
@@ -39,7 +39,7 @@ const DEFAULT_CATEGORIES = [
     { name: 'Фриланс', type: 'income', color: '#1ABC9C', icon: '💻', isDefault: true }
 ];
 
-// Регистрация
+//регистрация
 exports.register = async (req, res) => {
     try {
         const { email, password, lastName, firstName, patronymic } = req.body;
@@ -68,14 +68,13 @@ exports.register = async (req, res) => {
             isVerified: false
         });
         
-        // Создание базовых категорий
+        //создание базовых категорий для нового пользователя
         const categories = DEFAULT_CATEGORIES.map(cat => ({
             ...cat,
             userId: user.id
         }));
         await Category.bulkCreate(categories);
         
-        // Генерация кода подтверждения
         const verificationCode = generateCode();
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 15);
@@ -100,7 +99,7 @@ exports.register = async (req, res) => {
     }
 };
 
-// Подтверждение email
+//подтверждение почты
 exports.verifyEmail = async (req, res) => {
     try {
         const { userId, code } = req.body;
@@ -127,7 +126,7 @@ exports.verifyEmail = async (req, res) => {
     }
 };
 
-// Вход с созданием сессии
+//вход
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -148,11 +147,10 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: 'Подтвердите email перед входом. Проверьте почту.' });
         }
         
-        // Генерация токенов
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken();
         
-        // Сохранение сессии (только refreshToken, без token)
+        //сохранение сессии
         const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY);
         await Session.create({
             userId: user.id,
@@ -180,7 +178,7 @@ exports.login = async (req, res) => {
     }
 };
 
-// Обновление access токена
+//обновление access токена
 exports.refreshToken = async (req, res) => {
     try {
         const { refreshToken } = req.body;
@@ -189,7 +187,6 @@ exports.refreshToken = async (req, res) => {
             return res.status(401).json({ error: 'Refresh token не предоставлен' });
         }
         
-        // Поиск сессии по refreshToken
         const session = await Session.findOne({
             where: { refreshToken, isRevoked: false },
             include: [{ model: User, attributes: ['id', 'email'] }]
@@ -204,7 +201,6 @@ exports.refreshToken = async (req, res) => {
             return res.status(401).json({ error: 'Refresh token истек. Выполните вход заново.' });
         }
         
-        // Генерация нового access токена
         const newAccessToken = generateAccessToken(session.User);
         
         res.json({ accessToken: newAccessToken });
@@ -214,7 +210,7 @@ exports.refreshToken = async (req, res) => {
     }
 };
 
-// Выход (удаление сессии)
+//удаление сессии(выход)
 exports.logout = async (req, res) => {
     try {
         const { refreshToken } = req.body;
@@ -230,7 +226,7 @@ exports.logout = async (req, res) => {
     }
 };
 
-// Запрос на восстановление пароля
+//запрос на восстановление пароля
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -239,13 +235,11 @@ exports.forgotPassword = async (req, res) => {
             return res.status(400).json({ error: 'Введите email' });
         }
         
-        // Поиск пользователя
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(404).json({ error: 'Пользователь с таким email не найден' });
         }
         
-        // Генерация кода сброса
         const resetCode = generateCode();
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 15);
@@ -258,7 +252,6 @@ exports.forgotPassword = async (req, res) => {
             isUsed: false
         });
         
-        // Отправка кода на email
         await sendVerificationCode(email, resetCode, 'password_reset');
         
         res.json({
@@ -271,7 +264,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// Сброс пароля (после подтверждения кода)
+// сброс пароля
 exports.resetPassword = async (req, res) => {
     try {
         const { userId, code, newPassword } = req.body;
@@ -284,7 +277,7 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ error: 'Пароль должен содержать не менее 6 символов' });
         }
         
-        // Поиск кода
+        //поиск кода подтверждения
         const resetCode = await VerificationCode.findOne({
             where: {
                 userId,
@@ -298,15 +291,12 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ error: 'Неверный код сброса' });
         }
         
-        // Проверка срока действия
         if (new Date() > resetCode.expiresAt) {
             return res.status(400).json({ error: 'Код сброса истек. Запросите новый.' });
         }
         
-        // Хеширование нового пароля
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
-        // Обновление пароля
         await User.update({ passwordHash: hashedPassword }, { where: { id: userId } });
         await resetCode.update({ isUsed: true });
         
@@ -317,7 +307,7 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-// Повторная отправка кода подтверждения
+//повторная отправка кода подтверждения
 exports.resendVerificationCode = async (req, res) => {
     try {
         const { email } = req.body;
@@ -335,7 +325,6 @@ exports.resendVerificationCode = async (req, res) => {
             return res.status(400).json({ error: 'Email уже подтвержден' });
         }
         
-        // Генерация нового кода
         const verificationCode = generateCode();
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 15);

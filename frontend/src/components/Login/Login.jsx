@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi';
 import { authAPI } from '../../services/api';
 import './Auth.css';
 
@@ -12,8 +13,8 @@ function Login({ onLogin }) {
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
+        e.preventDefault(); 
+        setError(''); 
         setLoading(true);
         
         try {
@@ -24,6 +25,7 @@ function Login({ onLogin }) {
         } catch (err) {
             const errorMessage = err.response?.data?.error || 'Ошибка при входе в систему';
             setError(errorMessage);
+            console.error('Ошибка входа:', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -38,14 +40,16 @@ function Login({ onLogin }) {
                     {error && <div className="auth-error">{error}</div>}
                     <div className="form-group">
                         <label>Электронная почта</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="ivan@example.com"
-                            required
-                            disabled={loading}
-                        />
+                        <div className="input-wrapper">
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="ivan@example.com"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
                     </div>
                     <div className="form-group password-group">
                         <label>Пароль</label>
@@ -64,7 +68,7 @@ function Login({ onLogin }) {
                                 onClick={() => setShowPassword(!showPassword)}
                                 tabIndex="-1"
                             >
-                                {showPassword ? '🙈' : '👁️'}
+                                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                             </button>
                         </div>
                     </div>
@@ -72,7 +76,7 @@ function Login({ onLogin }) {
                         <Link to="/forgot-password" className="forgot-link">Забыли пароль?</Link>
                     </div>
                     <button type="submit" className="auth-btn" disabled={loading}>
-                        {loading ? 'Вход...' : 'Войти'}
+                        {loading ? 'Вход...' : <><FiLogIn /> Войти</>}
                     </button>
                 </form>
                 <p className="auth-link">

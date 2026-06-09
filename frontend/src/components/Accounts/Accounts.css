@@ -246,3 +246,27 @@
         gap: 8px;
     }
 }
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .accounts-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .add-account-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .account-card {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .total-balance {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+}

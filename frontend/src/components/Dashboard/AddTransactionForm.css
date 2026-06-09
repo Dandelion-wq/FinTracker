@@ -59,3 +59,49 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
 }
+
+.add-transaction-form select {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #2C3E2F;
+    cursor: pointer;
+}
+
+.add-transaction-form select:focus {
+    outline: none;
+    border-color: #2ECC71;
+}
+
+.add-transaction-form select option {
+    padding: 8px;
+}
+
+.form-hint {
+    display: block;
+    font-size: 11px;
+    color: #7F8C8D;
+    margin-top: 4px;
+}
+
+.balance-hint {
+    display: block;
+    font-size: 11px;
+    color: #7F8C8D;
+    margin-top: 4px;
+}
+
+.balance-error {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #E74C3C;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    text-align: center;
+    border-left: 3px solid #E74C3C;
+}

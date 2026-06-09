@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import {
+    FiTrendingUp, FiTrendingDown, FiDownload, FiSearch,
+    FiEdit2, FiTrash2, FiCheck, FiX, FiPlus, FiFilter
+} from 'react-icons/fi';
 import { transactionsAPI, categoriesAPI, accountsAPI } from '../../services/api';
 import './Transactions.css';
 
@@ -22,7 +26,6 @@ function Transactions() {
         try {
             setLoading(true);
 
-            // Получаем даты для фильтра
             const now = new Date();
             let startDate;
             if (filterDate === 'week') {
@@ -53,9 +56,9 @@ function Transactions() {
                 accountsAPI.getAll()
             ]);
 
-            setTransactions(transactionsRes.data);
-            setCategories(categoriesRes.data);
-            setAccounts(accountsRes.data);
+            setTransactions(transactionsRes.data || []);
+            setCategories(categoriesRes.data || []);
+            setAccounts(accountsRes.data || []);
         } catch (error) {
             console.error('Ошибка загрузки данных:', error);
         } finally {
@@ -77,6 +80,22 @@ function Transactions() {
         const date = new Date(dateString);
         return date.toLocaleDateString('ru-RU');
     };
+
+    const formatAmount = (amount) => {
+        const num = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+        return num.toLocaleString('ru-RU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    };
+
+    const totalIncome = transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0), 0);
+
+    const totalExpense = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0), 0);
 
     const handleDelete = async (id) => {
         if (!window.confirm('Вы уверены, что хотите удалить эту транзакцию?')) return;
@@ -109,7 +128,16 @@ function Transactions() {
 
     const handleEditSubmit = async (id) => {
         try {
-            const response = await transactionsAPI.update(id, editForm);
+            const dataToSend = {
+                amount: editForm.amount,
+                type: editForm.type,
+                categoryId: editForm.categoryId === '' ? null : parseInt(editForm.categoryId),
+                accountId: parseInt(editForm.accountId),
+                date: editForm.date,
+                description: editForm.description
+            };
+
+            const response = await transactionsAPI.update(id, dataToSend);
             setTransactions(transactions.map(t => t.id === id ? response.data : t));
             setEditingId(null);
             setEditForm({});
@@ -164,23 +192,11 @@ function Transactions() {
         URL.revokeObjectURL(url);
     };
 
-    // Правильный расчет сумм с преобразованием в числа
-    const totalIncome = transactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0), 0);
+    const filteredTransactions = transactions.filter(t =>
+        t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getCategoryName(t.categoryId).toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-    const totalExpense = transactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0), 0);
-
-    // Функция форматирования суммы
-    const formatAmount = (amount) => {
-        const num = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
-        return num.toLocaleString('ru-RU', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    };
     if (loading) {
         return <div className="loading-container">Загрузка транзакций...</div>;
     }
@@ -190,18 +206,20 @@ function Transactions() {
             <div className="page-header">
                 <h1 className="page-title">Транзакции</h1>
                 <button className="btn-export" onClick={handleExportCSV}>
-                    📎 Экспорт CSV
+                    <FiDownload /> Экспорт CSV
                 </button>
             </div>
 
             <div className="transactions-summary">
                 <div className="summary-card income">
+                    <FiTrendingUp />
                     <span>Доходы</span>
-                    <strong>+{totalIncome.toLocaleString()} BYN</strong>
+                    <strong>+{formatAmount(totalIncome)} BYN</strong>
                 </div>
                 <div className="summary-card expense">
+                    <FiTrendingDown />
                     <span>Расходы</span>
-                    <strong>-{totalExpense.toLocaleString()} BYN</strong>
+                    <strong>-{formatAmount(totalExpense)} BYN</strong>
                 </div>
             </div>
 
@@ -223,12 +241,15 @@ function Transactions() {
                     <option value="month">За месяц</option>
                     <option value="year">За год</option>
                 </select>
-                <input
-                    type="text"
-                    placeholder="Поиск по описанию..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <div className="search-wrapper">
+                    <FiSearch className="search-icon" />
+                    <input
+                        type="text"
+                        placeholder="Поиск..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
             </div>
 
             <div className="transactions-table-container">
@@ -245,10 +266,7 @@ function Transactions() {
                         </tr>
                     </thead>
                     <tbody>
-                        {transactions.filter(t =>
-                            t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            getCategoryName(t.categoryId).toLowerCase().includes(searchQuery.toLowerCase())
-                        ).map(transaction => (
+                        {filteredTransactions.map(transaction => (
                             <tr key={transaction.id}>
                                 {editingId === transaction.id ? (
                                     <>
@@ -300,8 +318,12 @@ function Transactions() {
                                             />
                                         </td>
                                         <td className="actions">
-                                            <button className="btn-save" onClick={() => handleEditSubmit(transaction.id)}>✓</button>
-                                            <button className="btn-cancel" onClick={handleCancelEdit}>✗</button>
+                                            <button className="btn-save" onClick={() => handleEditSubmit(transaction.id)}>
+                                                <FiCheck />
+                                            </button>
+                                            <button className="btn-cancel" onClick={handleCancelEdit}>
+                                                <FiX />
+                                            </button>
                                         </td>
                                     </>
                                 ) : (
@@ -316,17 +338,21 @@ function Transactions() {
                                         <td>{getAccountName(transaction.accountId)}</td>
                                         <td>{transaction.description || '—'}</td>
                                         <td className={transaction.type === 'income' ? 'income-text' : 'expense-text'}>
-                                            {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} BYN
+                                            {transaction.type === 'income' ? '+' : '-'}{formatAmount(transaction.amount)} BYN
                                         </td>
                                         <td className="actions">
-                                            <button className="btn-edit" onClick={() => handleEdit(transaction)}>✏️</button>
-                                            <button className="btn-delete" onClick={() => handleDelete(transaction.id)}>🗑️</button>
+                                            <button className="btn-edit" onClick={() => handleEdit(transaction)}>
+                                                <FiEdit2 />
+                                            </button>
+                                            <button className="btn-delete" onClick={() => handleDelete(transaction.id)}>
+                                                <FiTrash2 />
+                                            </button>
                                         </td>
                                     </>
                                 )}
                             </tr>
                         ))}
-                        {transactions.length === 0 && (
+                        {filteredTransactions.length === 0 && (
                             <tr>
                                 <td colSpan="7" className="empty-message">Нет транзакций</td>
                             </tr>

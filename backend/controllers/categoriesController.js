@@ -25,13 +25,18 @@ exports.create = async (req, res) => {
             return res.status(400).json({ error: 'Название и тип категории обязательны' });
         }
         
+        let parsedMonthlyLimit = null;
+        if (monthlyLimit && monthlyLimit !== '' && !isNaN(parseFloat(monthlyLimit))) {
+            parsedMonthlyLimit = parseFloat(monthlyLimit);
+        }
+        
         const category = await Category.create({
             userId,
             name,
             type,
             color: color || (type === 'expense' ? '#E74C3C' : '#27AE60'),
             icon: icon || null,
-            monthlyLimit: type === 'expense' ? monthlyLimit : null,
+            monthlyLimit: parsedMonthlyLimit,
             isDefault: false
         });
         
@@ -57,11 +62,20 @@ exports.update = async (req, res) => {
             return res.status(404).json({ error: 'Категория не найдена' });
         }
         
+        let parsedMonthlyLimit = category.monthlyLimit;
+        if (monthlyLimit !== undefined) {
+            if (monthlyLimit === '' || monthlyLimit === null || isNaN(parseFloat(monthlyLimit))) {
+                parsedMonthlyLimit = null;
+            } else {
+                parsedMonthlyLimit = parseFloat(monthlyLimit);
+            }
+        }
+        
         await category.update({
             name: name || category.name,
             color: color || category.color,
             icon: icon !== undefined ? icon : category.icon,
-            monthlyLimit: category.type === 'expense' ? monthlyLimit : null
+            monthlyLimit: parsedMonthlyLimit
         });
         
         res.json(category);

@@ -19,9 +19,20 @@ const Budget = sequelize.define('Budget', {
         type: DataTypes.STRING(100),
         allowNull: false
     },
+    type: {
+        type: DataTypes.STRING(20),
+        defaultValue: 'expense',
+        allowNull: false,
+        validate: {
+            isIn: [['expense', 'saving']]
+        }
+    },
     periodType: {
-        type: DataTypes.ENUM('week', 'month', 'year', 'custom'),
-        allowNull: false
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        validate: {
+            isIn: [['week', 'month', 'year', 'custom']]
+        }
     },
     startDate: {
         type: DataTypes.DATEONLY,
@@ -31,14 +42,15 @@ const Budget = sequelize.define('Budget', {
         type: DataTypes.DATEONLY,
         allowNull: false
     },
-    totalLimit: {
+    targetAmount: {
         type: DataTypes.DECIMAL(12, 2),
         allowNull: false,
+        defaultValue: 0,
         validate: {
-            min: 0.01
+            min: 0
         }
     },
-    currentSpent: {
+    currentAmount: {
         type: DataTypes.DECIMAL(12, 2),
         defaultValue: 0
     }

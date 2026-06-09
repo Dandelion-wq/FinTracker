@@ -9,12 +9,14 @@
     margin-bottom: 28px;
 }
 
+/* Планшеты */
 @media (max-width: 1024px) {
     .dashboard-grid {
         gap: 16px;
     }
 }
 
+/* Мобильные устройства */
 @media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;

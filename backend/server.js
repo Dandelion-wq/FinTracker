@@ -14,14 +14,11 @@ const swaggerSpec = require('./config/swagger');
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Swagger документация
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Маршруты
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoriesRoutes);
@@ -29,7 +26,6 @@ app.use('/api/accounts', accountsRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/budgets', budgetsRoutes);
 
-// Проверка подключения к БД
 const startServer = async () => {
     try {
         await sequelize.authenticate();

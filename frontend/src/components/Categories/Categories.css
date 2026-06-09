@@ -71,6 +71,9 @@
     margin-bottom: 20px;
     padding-bottom: 12px;
     border-bottom: 2px solid;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .section-title.expense-title {
@@ -98,6 +101,7 @@
     border-radius: 12px;
     border: 1px solid #E8E5DF;
     transition: all 0.2s;
+    flex-wrap: nowrap;
 }
 
 .category-card:hover {
@@ -108,6 +112,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
 }
 
 .color-dot {
@@ -115,22 +120,26 @@
     height: 14px;
     border-radius: 4px;
     display: inline-block;
+    flex-shrink: 0;
 }
 
 .category-name {
     font-size: 14px;
     font-weight: 500;
+    word-break: break-word;
 }
 
 .category-stats {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;
 }
 
 .category-limit {
     font-size: 12px;
     color: #7F8C8D;
+    white-space: nowrap;
 }
 
 .category-card .btn-edit,
@@ -139,11 +148,20 @@
     border: none;
     cursor: pointer;
     font-size: 16px;
-    padding: 4px;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
 }
 
 .category-card .btn-edit {
     color: #3498DB;
+}
+
+.category-card .btn-edit:hover {
+    background-color: rgba(52, 152, 219, 0.1);
 }
 
 .category-card .btn-delete {
@@ -152,12 +170,14 @@
 
 .category-card .btn-delete:hover {
     color: #E74C3C;
+    background-color: rgba(231, 76, 60, 0.1);
 }
 
 .edit-fields {
     display: flex;
     gap: 12px;
     flex: 1;
+    flex-wrap: wrap;
 }
 
 .edit-fields input,
@@ -180,6 +200,12 @@
     color: #27AE60;
     cursor: pointer;
     font-size: 16px;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+.category-card .btn-save:hover {
+    background-color: rgba(39, 174, 96, 0.1);
 }
 
 .category-card .btn-cancel {
@@ -188,6 +214,12 @@
     color: #E74C3C;
     cursor: pointer;
     font-size: 16px;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+.category-card .btn-cancel:hover {
+    background-color: rgba(231, 76, 60, 0.1);
 }
 
 .empty-message {
@@ -196,18 +228,66 @@
     padding: 32px;
 }
 
+/* Адаптация для мобильных */
 @media (max-width: 768px) {
-    .add-category-form .form-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-    
     .categories-sections {
         grid-template-columns: 1fr;
         gap: 16px;
     }
     
+    .add-category-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    /* Кнопки редактирования и удаления остаются в той же строке справа */
+    .category-card {
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+    
+    .category-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .category-name {
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .category-stats {
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    
+    .category-limit {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    
     .edit-fields {
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .category-card {
+        padding: 10px 12px;
+    }
+    
+    .category-stats {
+        gap: 4px;
+    }
+    
+    .category-limit {
+        display: none;
+    }
+    
+    .category-name {
+        font-size: 12px;
     }
 }

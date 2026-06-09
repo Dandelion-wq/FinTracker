@@ -1,6 +1,58 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Transaction:
+ *       type: object
+ *       required:
+ *         - amount
+ *         - type
+ *         - accountId
+ *         - date
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: Уникальный идентификатор
+ *         userId:
+ *           type: integer
+ *           description: ID пользователя
+ *         accountId:
+ *           type: integer
+ *           description: ID счета
+ *         categoryId:
+ *           type: integer
+ *           description: ID категории
+ *         amount:
+ *           type: number
+ *           description: Сумма транзакции
+ *         type:
+ *           type: string
+ *           enum: [income, expense]
+ *           description: Тип транзакции (доход/расход)
+ *         date:
+ *           type: string
+ *           format: date
+ *           description: Дата транзакции
+ *         description:
+ *           type: string
+ *           description: Описание транзакции
+ *         isTransfer:
+ *           type: boolean
+ *           description: Является ли переводом
+ *         transferAccountId:
+ *           type: integer
+ *           description: ID счета получателя при переводе
+ *         savingAction:
+ *           type: string
+ *           enum: [deposit, withdrawal]
+ *           description: deposit - пополнение накоплений, withdrawal - снятие
+ *         budgetId:
+ *           type: integer
+ *           description: ID бюджета (для накопительных бюджетов)
+ */
 const Transaction = sequelize.define('Transaction', {
     id: {
         type: DataTypes.INTEGER,
@@ -49,6 +101,18 @@ const Transaction = sequelize.define('Transaction', {
     receiptImage: {
         type: DataTypes.TEXT,
         allowNull: true
+    },
+    savingAction: {
+        type: DataTypes.ENUM('deposit', 'withdrawal'),
+        allowNull: true
+    },
+    budgetId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Budgets',
+            key: 'id'
+        }
     }
 }, {
     tableName: 'Transactions',
