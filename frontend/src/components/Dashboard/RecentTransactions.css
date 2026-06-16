@@ -17,6 +17,7 @@
     font-size: 16px;
     font-weight: 600;
     color: #2C3E2F;
+    margin: 0;
 }
 
 .text-link {
@@ -27,6 +28,12 @@
 
 .text-link:hover {
     text-decoration: underline;
+}
+
+/* Десктопная таблица */
+.desktop-table {
+    display: block;
+    overflow-x: auto;
 }
 
 .transactions-table {
@@ -62,4 +69,159 @@
     text-align: center;
     color: #BDC3C7;
     padding: 32px;
+}
+
+/* Мобильные карточки - скрыты по умолчанию */
+.mobile-cards {
+    display: none;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+    .recent-transactions {
+        padding: 16px;
+        margin-top: 20px;
+    }
+    
+    .desktop-table {
+        display: none;
+    }
+    
+    .mobile-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .transaction-card {
+        background: linear-gradient(135deg, #FDFBF7 0%, #FFFFFF 100%);
+        border-radius: 12px;
+        padding: 14px;
+        border: 1px solid #E8E5DF;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .transaction-card:hover {
+        border-color: #2ECC71;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .transaction-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #E8E5DF;
+        margin-bottom: 10px;
+    }
+    
+    .transaction-date {
+        font-size: 13px;
+        font-weight: 500;
+        color: #7F8C8D;
+    }
+    
+    .transaction-amount {
+        font-size: 16px;
+        font-weight: 700;
+    }
+    
+    .transaction-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .transaction-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    
+    .transaction-label {
+        color: #7F8C8D;
+        font-weight: 500;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+    
+    .transaction-value {
+        color: #2C3E2F;
+        font-weight: 500;
+        text-align: right;
+        word-break: break-word;
+        flex: 1;
+    }
+    
+    .empty-message-mobile {
+        text-align: center;
+        color: #BDC3C7;
+        padding: 32px;
+        background: linear-gradient(135deg, #FDFBF7 0%, #FFFFFF 100%);
+        border-radius: 12px;
+        border: 1px solid #E8E5DF;
+    }
+}
+
+@media (max-width: 480px) {
+    .recent-transactions {
+        padding: 12px;
+        margin-top: 16px;
+        border-radius: 12px;
+    }
+    
+    .section-header h3 {
+        font-size: 14px;
+    }
+    
+    .text-link {
+        font-size: 12px;
+    }
+    
+    .transaction-card {
+        padding: 10px;
+    }
+    
+    .transaction-card-header {
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .transaction-date {
+        font-size: 11px;
+    }
+    
+    .transaction-amount {
+        font-size: 14px;
+    }
+    
+    .transaction-row {
+        font-size: 11px;
+        gap: 8px;
+    }
+    
+    .transaction-label {
+        min-width: 70px;
+    }
+    
+    .empty-message-mobile {
+        padding: 24px;
+        font-size: 13px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .transactions-table th,
+    .transactions-table td {
+        padding: 10px 6px;
+        font-size: 12px;
+    }
+    
+    .transactions-table th {
+        font-size: 11px;
+    }
 }

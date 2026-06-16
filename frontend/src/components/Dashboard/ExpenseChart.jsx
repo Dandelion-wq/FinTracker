@@ -30,6 +30,14 @@ function ExpenseChart({ transactions, categories }) {
         return transactions.filter(t => new Date(t.date) >= startDate);
     };
 
+    // Получение суммы в BYN для транзакции
+    const getAmountInBYN = (transaction) => {
+        if (transaction.amountInBYN !== undefined && transaction.amountInBYN !== null) {
+            return Number(transaction.amountInBYN);
+        }
+        return Number(transaction.amount);
+    };
+
     // Инициализация графика
     useEffect(() => {
         if (chartRef.current && !chartInstanceRef.current) {
@@ -80,10 +88,10 @@ function ExpenseChart({ transactions, categories }) {
             expenseTransactions.forEach(transaction => {
                 const category = categories.find(c => c.id === transaction.categoryId);
                 const categoryName = category ? category.name : 'Без категории';
-                categoryTotals[categoryName] = (categoryTotals[categoryName] || 0) + Number(transaction.amount);
+                const amountInBYN = getAmountInBYN(transaction);
+                categoryTotals[categoryName] = (categoryTotals[categoryName] || 0) + amountInBYN;
             });
 
-            // Сортируем данные по сумме (по убыванию)
             const chartData = Object.entries(categoryTotals)
                 .map(([name, value], index) => ({
                     name,
@@ -94,12 +102,14 @@ function ExpenseChart({ transactions, categories }) {
                 }))
                 .sort((a, b) => b.value - a.value);
 
-            const totalAmount = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const totalAmount = expenseTransactions.reduce((sum, t) => sum + getAmountInBYN(t), 0);
 
             const option = {
                 tooltip: {
                     trigger: 'item',
-                    formatter: '{b}: {d}% ({c} BYN)',
+                    formatter: (params) => {
+                        return `${params.name}: ${params.percent.toFixed(1)}% (${params.value.toLocaleString()} BYN)`;
+                    },
                     backgroundColor: 'rgba(255,255,255,0.95)',
                     borderColor: '#E8E5DF',
                     borderWidth: 1,
@@ -139,9 +149,9 @@ function ExpenseChart({ transactions, categories }) {
                         length2: 8,
                         smooth: true
                     },
+                    // Полностью отключаем все эффекты при наведении
                     emphasis: {
-                        scale: true,
-                        label: { show: true, fontWeight: 'bold' }
+                        disabled: true
                     },
                     itemStyle: {
                         borderRadius: 6,
@@ -150,6 +160,7 @@ function ExpenseChart({ transactions, categories }) {
                     }
                 }]
             };
+            
             // Адаптация для мобильных устройств
             if (isMobile) {
                 option.legend = {
@@ -161,12 +172,10 @@ function ExpenseChart({ transactions, categories }) {
                     itemHeight: 10,
                     itemGap: 8,
                     formatter: (name) => {
-                        const item = chartData.find(d => d.name === name);
-                        if (item && !isSmallMobile) {
-                            const shortName = name.length > 15 ? name.substring(0, 13) + '...' : name;
-                            return shortName;
+                        if (isSmallMobile) {
+                            return name.length > 12 ? name.substring(0, 10) + '...' : name;
                         }
-                        return name;
+                        return name.length > 15 ? name.substring(0, 13) + '...' : name;
                     }
                 };
                 option.series[0].radius = ['30%', '55%'];
@@ -188,9 +197,8 @@ function ExpenseChart({ transactions, categories }) {
             for (const transaction of sortedTransactions) {
                 const dateStr = transaction.date;
                 const current = dateMap.get(dateStr) || 0;
-                const amount = transaction.type === 'income'
-                    ? Number(transaction.amount)
-                    : -Number(transaction.amount);
+                const amountInBYN = getAmountInBYN(transaction);
+                const amount = transaction.type === 'income' ? amountInBYN : -amountInBYN;
                 dateMap.set(dateStr, current + amount);
             }
 
@@ -265,7 +273,8 @@ function ExpenseChart({ transactions, categories }) {
                     symbol: 'circle',
                     symbolSize: isMobile ? 3 : 4,
                     itemStyle: { color: '#27AE60' },
-                    label: { show: false }
+                    label: { show: false },
+                    emphasis: { disabled: true }
                 }]
             };
             chartInstanceRef.current.setOption(option, true);
@@ -277,11 +286,12 @@ function ExpenseChart({ transactions, categories }) {
 
             filteredTransactions.forEach(transaction => {
                 const month = transaction.date.slice(0, 7);
-                const amount = Number(transaction.amount);
+                const amountInBYN = getAmountInBYN(transaction);
+                
                 if (transaction.type === 'income') {
-                    monthlyIncome[month] = (monthlyIncome[month] || 0) + amount;
+                    monthlyIncome[month] = (monthlyIncome[month] || 0) + amountInBYN;
                 } else {
-                    monthlyExpense[month] = (monthlyExpense[month] || 0) + amount;
+                    monthlyExpense[month] = (monthlyExpense[month] || 0) + amountInBYN;
                 }
             });
 
@@ -360,7 +370,8 @@ function ExpenseChart({ transactions, categories }) {
                             position: 'top',
                             formatter: (params) => params.value.toLocaleString(),
                             fontSize: 9
-                        }
+                        },
+                        emphasis: { disabled: true }
                     },
                     {
                         name: 'Расходы',
@@ -375,14 +386,14 @@ function ExpenseChart({ transactions, categories }) {
                             position: 'top',
                             formatter: (params) => params.value.toLocaleString(),
                             fontSize: 9
-                        }
+                        },
+                        emphasis: { disabled: true }
                     }
                 ]
             };
             chartInstanceRef.current.setOption(option, true);
         }
 
-        // Принудительный пересчет размера после обновления
         setTimeout(() => {
             if (chartInstanceRef.current) {
                 chartInstanceRef.current.resize();

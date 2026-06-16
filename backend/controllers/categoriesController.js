@@ -1,6 +1,5 @@
 const { Category } = require('../models');
 
-// Получить все категории пользователя
 exports.getAll = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -15,11 +14,10 @@ exports.getAll = async (req, res) => {
     }
 };
 
-// Создать новую категорию
 exports.create = async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { name, type, color, icon, monthlyLimit } = req.body;
+        const { name, type, color, monthlyLimit } = req.body;
         
         if (!name || !type) {
             return res.status(400).json({ error: 'Название и тип категории обязательны' });
@@ -35,7 +33,6 @@ exports.create = async (req, res) => {
             name,
             type,
             color: color || (type === 'expense' ? '#E74C3C' : '#27AE60'),
-            icon: icon || null,
             monthlyLimit: parsedMonthlyLimit,
             isDefault: false
         });
@@ -47,12 +44,11 @@ exports.create = async (req, res) => {
     }
 };
 
-// Обновить категорию
 exports.update = async (req, res) => {
     try {
         const userId = req.user.userId;
         const categoryId = req.params.id;
-        const { name, color, icon, monthlyLimit } = req.body;
+        const { name, color, monthlyLimit } = req.body;
         
         const category = await Category.findOne({
             where: { id: categoryId, userId }
@@ -74,7 +70,6 @@ exports.update = async (req, res) => {
         await category.update({
             name: name || category.name,
             color: color || category.color,
-            icon: icon !== undefined ? icon : category.icon,
             monthlyLimit: parsedMonthlyLimit
         });
         
@@ -85,7 +80,6 @@ exports.update = async (req, res) => {
     }
 };
 
-// Удалить категорию
 exports.delete = async (req, res) => {
     try {
         const userId = req.user.userId;

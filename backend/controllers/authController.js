@@ -29,14 +29,14 @@ const generateRefreshToken = () => {
 
 //базовые категории
 const DEFAULT_CATEGORIES = [
-    { name: 'Продукты', type: 'expense', color: '#E74C3C', icon: '🥑', isDefault: true },
-    { name: 'Транспорт', type: 'expense', color: '#F39C12', icon: '🚗', isDefault: true },
-    { name: 'Кафе и рестораны', type: 'expense', color: '#E67E22', icon: '☕', isDefault: true },
-    { name: 'Коммунальные услуги', type: 'expense', color: '#3498DB', icon: '💡', isDefault: true },
-    { name: 'Развлечения', type: 'expense', color: '#9B59B6', icon: '🎬', isDefault: true },
-    { name: 'Здоровье', type: 'expense', color: '#1ABC9C', icon: '💊', isDefault: true },
-    { name: 'Зарплата', type: 'income', color: '#27AE60', icon: '💰', isDefault: true },
-    { name: 'Фриланс', type: 'income', color: '#1ABC9C', icon: '💻', isDefault: true }
+    { name: 'Продукты', type: 'expense', color: '#E74C3C', isDefault: true },
+    { name: 'Транспорт', type: 'expense', color: '#F39C12', isDefault: true },
+    { name: 'Кафе и рестораны', type: 'expense', color: '#E67E22', isDefault: true },
+    { name: 'Коммунальные услуги', type: 'expense', color: '#3498DB', isDefault: true },
+    { name: 'Развлечения', type: 'expense', color: '#9B59B6', isDefault: true },
+    { name: 'Здоровье', type: 'expense', color: '#1ABC9C', isDefault: true },
+    { name: 'Зарплата', type: 'income', color: '#27AE60', isDefault: true },
+    { name: 'Фриланс', type: 'income', color: '#1ABC9C', isDefault: true }
 ];
 
 //регистрация

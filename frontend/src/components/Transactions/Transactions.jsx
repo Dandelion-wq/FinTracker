@@ -4,7 +4,18 @@ import {
     FiEdit2, FiTrash2, FiCheck, FiX, FiPlus, FiFilter
 } from 'react-icons/fi';
 import { transactionsAPI, categoriesAPI, accountsAPI } from '../../services/api';
+import useToast from '../../hooks/useToast';
+import ToastContainer from '../UI/ToastContainer';
+import ConfirmModal from '../UI/ConfirmModal';
 import './Transactions.css';
+
+// Символы валют
+const currencySymbols = {
+    'BYN': 'Br',
+    'USD': '$',
+    'EUR': '€',
+    'RUB': '₽'
+};
 
 function Transactions() {
     const [transactions, setTransactions] = useState([]);
@@ -17,6 +28,11 @@ function Transactions() {
     const [searchQuery, setSearchQuery] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
+    const { toasts, removeToast, success, error: showError } = useToast();
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        transactionId: null
+    });
 
     useEffect(() => {
         loadData();
@@ -61,6 +77,7 @@ function Transactions() {
             setAccounts(accountsRes.data || []);
         } catch (error) {
             console.error('Ошибка загрузки данных:', error);
+            showError('Не удалось загрузить данные');
         } finally {
             setLoading(false);
         }
@@ -74,6 +91,10 @@ function Transactions() {
     const getAccountName = (accountId) => {
         const account = accounts.find(a => a.id === accountId);
         return account ? account.name : 'Без счета';
+    };
+
+    const getCurrencySymbol = (currency) => {
+        return currencySymbols[currency] || currency;
     };
 
     const formatDate = (dateString) => {
@@ -97,15 +118,35 @@ function Transactions() {
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0), 0);
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Вы уверены, что хотите удалить эту транзакцию?')) return;
+    // Открытие модального окна подтверждения удаления
+    const openDeleteConfirm = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            transactionId: id
+        });
+    };
 
+    // Закрытие модального окна
+    const closeDeleteConfirm = () => {
+        setConfirmModal({
+            isOpen: false,
+            transactionId: null
+        });
+    };
+
+    // Подтверждение удаления
+    const confirmDelete = async () => {
+        const { transactionId } = confirmModal;
+        
         try {
-            await transactionsAPI.delete(id);
-            setTransactions(transactions.filter(t => t.id !== id));
+            await transactionsAPI.delete(transactionId);
+            setTransactions(transactions.filter(t => t.id !== transactionId));
+            success('Транзакция успешно удалена');
         } catch (error) {
             console.error('Ошибка удаления:', error);
-            alert('Не удалось удалить транзакцию');
+            showError('Не удалось удалить транзакцию');
+        } finally {
+            closeDeleteConfirm();
         }
     };
 
@@ -141,9 +182,10 @@ function Transactions() {
             setTransactions(transactions.map(t => t.id === id ? response.data : t));
             setEditingId(null);
             setEditForm({});
+            success('Транзакция успешно обновлена');
         } catch (error) {
             console.error('Ошибка обновления:', error);
-            alert('Не удалось обновить транзакцию');
+            showError('Не удалось обновить транзакцию');
         }
     };
 
@@ -156,7 +198,7 @@ function Transactions() {
         const filtered = transactions;
         const delimiter = ';';
 
-        const headers = ['Дата', 'Тип', 'Категория', 'Счет', 'Описание', 'Сумма'];
+        const headers = ['Дата', 'Тип', 'Категория', 'Счет', 'Описание', 'Сумма', 'Валюта'];
 
         const rows = filtered.map(t => [
             t.date,
@@ -164,7 +206,8 @@ function Transactions() {
             getCategoryName(t.categoryId),
             getAccountName(t.accountId),
             t.description || '',
-            t.type === 'income' ? t.amount : -t.amount
+            t.type === 'income' ? t.amount : -t.amount,
+            t.currency || 'BYN'
         ]);
 
         const escapeCell = (cell) => {
@@ -203,6 +246,19 @@ function Transactions() {
 
     return (
         <div className="transactions-page">
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeDeleteConfirm}
+                onConfirm={confirmDelete}
+                title="Удаление транзакции"
+                message="Вы уверены, что хотите удалить эту транзакцию? Это действие нельзя отменить."
+                confirmText="Удалить"
+                cancelText="Отмена"
+                type="danger"
+            />
+            
             <div className="page-header">
                 <h1 className="page-title">Транзакции</h1>
                 <button className="btn-export" onClick={handleExportCSV}>
@@ -214,12 +270,12 @@ function Transactions() {
                 <div className="summary-card income">
                     <FiTrendingUp />
                     <span>Доходы</span>
-                    <strong>+{formatAmount(totalIncome)} BYN</strong>
+                    <strong>+{formatAmount(totalIncome)} Br</strong>
                 </div>
                 <div className="summary-card expense">
                     <FiTrendingDown />
                     <span>Расходы</span>
-                    <strong>-{formatAmount(totalExpense)} BYN</strong>
+                    <strong>-{formatAmount(totalExpense)} Br</strong>
                 </div>
             </div>
 
@@ -338,13 +394,14 @@ function Transactions() {
                                         <td>{getAccountName(transaction.accountId)}</td>
                                         <td>{transaction.description || '—'}</td>
                                         <td className={transaction.type === 'income' ? 'income-text' : 'expense-text'}>
-                                            {transaction.type === 'income' ? '+' : '-'}{formatAmount(transaction.amount)} BYN
+                                            {transaction.type === 'income' ? '+' : '-'}
+                                            {formatAmount(transaction.amount)} {getCurrencySymbol(transaction.currency || 'BYN')}
                                         </td>
                                         <td className="actions">
                                             <button className="btn-edit" onClick={() => handleEdit(transaction)}>
                                                 <FiEdit2 />
                                             </button>
-                                            <button className="btn-delete" onClick={() => handleDelete(transaction.id)}>
+                                            <button className="btn-delete" onClick={() => openDeleteConfirm(transaction.id)}>
                                                 <FiTrash2 />
                                             </button>
                                         </td>

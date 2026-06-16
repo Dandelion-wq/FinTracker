@@ -270,3 +270,8 @@
         gap: 8px;
     }
 }
+.account-currency {
+    font-size: 10px;
+    color: #94A3B8;
+    margin-top: 2px;
+}

@@ -12,12 +12,10 @@ import ForgotPassword from './components/Login/ForgotPassword';
 import { authAPI } from './services/api';
 import './App.css';
 
-// Компонент для отслеживания изменения маршрута
 function RouteChangeHandler({ children }) {
     const location = useLocation();
     
     useEffect(() => {
-        // При каждом изменении маршрута форсируем пересчет размеров
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
         }, 100);
@@ -33,7 +31,7 @@ function App() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-    // Проверка сессии при загрузке приложения
+    //проверка сессии при загрузке
     useEffect(() => {
         const checkAuth = async () => {
             const accessToken = localStorage.getItem('accessToken');
@@ -67,18 +65,15 @@ function App() {
         checkAuth();
     }, []);
 
-    // Отслеживание изменения размера окна
     useEffect(() => {
         const handleResize = () => {
             const newIsMobile = window.innerWidth <= 768;
             setIsMobile(newIsMobile);
             
-            // При изменении размера закрываем мобильное меню
             if (!newIsMobile && isMobileMenuOpen) {
                 setIsMobileMenuOpen(false);
             }
             
-            // Форсируем перерисовку всех графиков
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
             }, 50);

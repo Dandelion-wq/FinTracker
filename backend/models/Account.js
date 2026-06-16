@@ -31,10 +31,6 @@ const Account = sequelize.define('Account', {
         type: DataTypes.DECIMAL(12, 2),
         defaultValue: 0
     },
-    icon: {
-        type: DataTypes.STRING(50),
-        allowNull: true
-    },
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true

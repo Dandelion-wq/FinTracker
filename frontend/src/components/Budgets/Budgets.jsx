@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     FiPlus, FiEdit2, FiTrash2, FiTarget, FiTrendingDown, 
     FiTrendingUp, FiCheck, FiX, FiAlertCircle, FiDollarSign
@@ -6,6 +6,7 @@ import {
 import { budgetsAPI } from '../../services/api';
 import useToast from '../../hooks/useToast';
 import ToastContainer from '../UI/ToastContainer';
+import ConfirmModal from '../UI/ConfirmModal';
 import './Budgets.css';
 
 function Budgets() {
@@ -16,6 +17,11 @@ function Budgets() {
     const [editForm, setEditForm] = useState({});
     const [filterType, setFilterType] = useState('active');
     const { toasts, removeToast, success, error: showError } = useToast();
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        budgetId: null,
+        budgetName: ''
+    });
     const [newBudget, setNewBudget] = useState({
         name: '',
         type: 'expense',
@@ -25,11 +31,7 @@ function Budgets() {
         targetAmount: ''
     });
 
-    useEffect(() => {
-        loadBudgets();
-    }, []);
-
-    const loadBudgets = async () => {
+    const loadBudgets = useCallback(async () => {
         try {
             setLoading(true);
             const response = await budgetsAPI.getAll();
@@ -39,6 +41,49 @@ function Budgets() {
             showError('Не удалось загрузить бюджеты');
         } finally {
             setLoading(false);
+        }
+    }, [showError]);
+
+    useEffect(() => {
+        loadBudgets();
+    }, [loadBudgets]);
+
+    // Принудительное обновление после редактирования
+    const refreshBudgets = async () => {
+        await loadBudgets();
+    };
+
+    // Открытие модального окна подтверждения удаления
+    const openDeleteConfirm = (id, name) => {
+        setConfirmModal({
+            isOpen: true,
+            budgetId: id,
+            budgetName: name
+        });
+    };
+
+    // Закрытие модального окна
+    const closeDeleteConfirm = () => {
+        setConfirmModal({
+            isOpen: false,
+            budgetId: null,
+            budgetName: ''
+        });
+    };
+
+    // Подтверждение удаления
+    const confirmDelete = async () => {
+        const { budgetId, budgetName } = confirmModal;
+        
+        try {
+            await budgetsAPI.delete(budgetId);
+            await refreshBudgets();
+            success(`Бюджет "${budgetName}" удален`);
+        } catch (error) {
+            console.error('Ошибка удаления бюджета:', error);
+            showError('Не удалось удалить бюджет');
+        } finally {
+            closeDeleteConfirm();
         }
     };
 
@@ -104,7 +149,7 @@ function Budgets() {
         }
         
         try {
-            const response = await budgetsAPI.create({
+            await budgetsAPI.create({
                 name: newBudget.name,
                 type: newBudget.type,
                 periodType: newBudget.periodType,
@@ -112,7 +157,7 @@ function Budgets() {
                 endDate: newBudget.periodType === 'custom' ? newBudget.endDate : undefined,
                 targetAmount: parseFloat(newBudget.targetAmount)
             });
-            setBudgets([...budgets, response.data]);
+            await refreshBudgets();
             setNewBudget({
                 name: '',
                 type: 'expense',
@@ -126,19 +171,6 @@ function Budgets() {
         } catch (error) {
             console.error('Ошибка создания бюджета:', error);
             showError(error.response?.data?.error || 'Не удалось создать бюджет');
-        }
-    };
-
-    const handleDeleteBudget = async (id, name) => {
-        if (!window.confirm('Вы уверены, что хотите удалить этот бюджет?')) return;
-        
-        try {
-            await budgetsAPI.delete(id);
-            setBudgets(budgets.filter(b => b.id !== id));
-            success(`Бюджет "${name}" удален`);
-        } catch (error) {
-            console.error('Ошибка удаления бюджета:', error);
-            showError('Не удалось удалить бюджет');
         }
     };
 
@@ -161,7 +193,7 @@ function Budgets() {
 
     const handleEditSubmit = async (id) => {
         try {
-            const response = await budgetsAPI.update(id, {
+            await budgetsAPI.update(id, {
                 name: editForm.name,
                 type: editForm.type,
                 periodType: editForm.periodType,
@@ -169,7 +201,7 @@ function Budgets() {
                 endDate: editForm.periodType === 'custom' ? editForm.endDate : undefined,
                 targetAmount: parseFloat(editForm.targetAmount)
             });
-            setBudgets(budgets.map(b => b.id === id ? response.data : b));
+            await refreshBudgets();
             setEditingId(null);
             setEditForm({});
             success(`Бюджет "${editForm.name}" обновлен`);
@@ -216,6 +248,17 @@ function Budgets() {
     return (
         <div className="budgets-page">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeDeleteConfirm}
+                onConfirm={confirmDelete}
+                title="Удаление бюджета"
+                message={`Вы уверены, что хотите удалить бюджет "${confirmModal.budgetName}"? Все связанные данные будут потеряны.`}
+                confirmText="Удалить"
+                cancelText="Отмена"
+                type="danger"
+            />
             
             <div className="page-header">
                 <h1 className="page-title">
@@ -404,7 +447,10 @@ function Budgets() {
                                                 {budget.endDate && ` - ${formatDate(budget.endDate)}`}
                                             </span>
                                         </div>
-                                        <button className="btn-delete" onClick={() => handleDeleteBudget(budget.id, budget.name)}>
+                                        <button 
+                                            className="btn-delete" 
+                                            onClick={() => openDeleteConfirm(budget.id, budget.name)}
+                                        >
                                             <FiTrash2 />
                                         </button>
                                     </div>

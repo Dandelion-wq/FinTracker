@@ -27,7 +27,13 @@ const sequelize = require('../config/database');
  *           description: ID категории
  *         amount:
  *           type: number
- *           description: Сумма транзакции
+ *           description: Сумма транзакции в валюте счета
+ *         currency:
+ *           type: string
+ *           description: Валюта транзакции (3 буквы)
+ *         amountInBYN:
+ *           type: number
+ *           description: Сумма в белорусских рублях (для отчетов и графиков)
  *         type:
  *           type: string
  *           enum: [income, expense]
@@ -78,6 +84,16 @@ const Transaction = sequelize.define('Transaction', {
             min: 0.01
         }
     },
+    currency: {
+        type: DataTypes.STRING(3),
+        defaultValue: 'BYN',
+        allowNull: false
+    },
+    amountInBYN: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Сумма в белорусских рублях (для отчетов и графиков)'
+    },
     type: {
         type: DataTypes.ENUM('income', 'expense'),
         allowNull: false
@@ -96,10 +112,6 @@ const Transaction = sequelize.define('Transaction', {
     },
     transferAccountId: {
         type: DataTypes.INTEGER,
-        allowNull: true
-    },
-    receiptImage: {
-        type: DataTypes.TEXT,
         allowNull: true
     },
     savingAction: {

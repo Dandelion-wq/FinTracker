@@ -1,6 +1,5 @@
 const { Account } = require('../models');
 
-// Получить все счета пользователя
 exports.getAll = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -15,11 +14,10 @@ exports.getAll = async (req, res) => {
     }
 };
 
-// Создать новый счет
 exports.create = async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { name, type, currency, balance, icon } = req.body;
+        const { name, type, currency, balance } = req.body;
         
         if (!name || !type) {
             return res.status(400).json({ error: 'Название и тип счета обязательны' });
@@ -31,7 +29,6 @@ exports.create = async (req, res) => {
             type,
             currency: currency || 'BYN',
             balance: balance || 0,
-            icon: icon || getIconByType(type),
             isActive: true
         });
         
@@ -42,12 +39,11 @@ exports.create = async (req, res) => {
     }
 };
 
-// Обновить счет
 exports.update = async (req, res) => {
     try {
         const userId = req.user.userId;
         const accountId = req.params.id;
-        const { name, type, currency, icon, isActive } = req.body;
+        const { name, type, currency, isActive } = req.body;
         
         const account = await Account.findOne({
             where: { id: accountId, userId }
@@ -61,7 +57,6 @@ exports.update = async (req, res) => {
             name: name || account.name,
             type: type || account.type,
             currency: currency || account.currency,
-            icon: icon !== undefined ? icon : account.icon,
             isActive: isActive !== undefined ? isActive : account.isActive
         });
         
@@ -72,7 +67,6 @@ exports.update = async (req, res) => {
     }
 };
 
-// Удалить счет (мягкое удаление - просто деактивируем)
 exports.delete = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -86,7 +80,6 @@ exports.delete = async (req, res) => {
             return res.status(404).json({ error: 'Счет не найден' });
         }
         
-        // Мягкое удаление - просто деактивируем
         await account.update({ isActive: false });
         res.json({ message: 'Счет удален' });
     } catch (error) {
@@ -94,14 +87,3 @@ exports.delete = async (req, res) => {
         res.status(500).json({ error: 'Ошибка при удалении счета' });
     }
 };
-
-// Вспомогательная функция для иконки по умолчанию
-function getIconByType(type) {
-    const icons = {
-        cash: '💵',
-        card: '💳',
-        ewallet: '📱',
-        deposit: '🏦'
-    };
-    return icons[type] || '💰';
-}

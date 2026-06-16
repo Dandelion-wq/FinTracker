@@ -13,6 +13,7 @@ import {
 import { accountsAPI } from '../../services/api';
 import useToast from '../../hooks/useToast';
 import ToastContainer from '../UI/ToastContainer';
+import ConfirmModal from '../UI/ConfirmModal';
 import './Accounts.css';
 
 const accountIcons = {
@@ -22,6 +23,13 @@ const accountIcons = {
     deposit: <FiHome size={24} />
 };
 
+const currencySymbols = {
+    BYN: 'BYN',
+    USD: '$',
+    EUR: '€',
+    RUB: '₽'
+};
+
 function Accounts() {
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,12 +37,16 @@ function Accounts() {
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
     const { toasts, removeToast, success, error: showError } = useToast();
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        accountId: null,
+        accountName: ''
+    });
     const [newAccount, setNewAccount] = useState({
         name: '',
         type: 'cash',
         currency: 'BYN',
-        balance: '',
-        icon: '💵'
+        balance: ''
     });
 
     useEffect(() => {
@@ -64,6 +76,40 @@ function Accounts() {
         return types[type] || type;
     };
 
+    // Открытие модального окна подтверждения удаления
+    const openDeleteConfirm = (id, name) => {
+        setConfirmModal({
+            isOpen: true,
+            accountId: id,
+            accountName: name
+        });
+    };
+
+    // Закрытие модального окна
+    const closeDeleteConfirm = () => {
+        setConfirmModal({
+            isOpen: false,
+            accountId: null,
+            accountName: ''
+        });
+    };
+
+    // Подтверждение удаления
+    const confirmDelete = async () => {
+        const { accountId, accountName } = confirmModal;
+        
+        try {
+            await accountsAPI.delete(accountId);
+            setAccounts(accounts.filter(a => a.id !== accountId));
+            success(`Счет "${accountName}" удален`);
+        } catch (error) {
+            console.error('Ошибка удаления счета:', error);
+            showError('Не удалось удалить счет');
+        } finally {
+            closeDeleteConfirm();
+        }
+    };
+
     const handleAddAccount = async () => {
         if (!newAccount.name) {
             showError('Введите название счета');
@@ -72,11 +118,13 @@ function Accounts() {
 
         try {
             const response = await accountsAPI.create({
-                ...newAccount,
+                name: newAccount.name,
+                type: newAccount.type,
+                currency: newAccount.currency,
                 balance: parseFloat(newAccount.balance) || 0
             });
             setAccounts([...accounts, response.data]);
-            setNewAccount({ name: '', type: 'cash', currency: 'BYN', balance: '', icon: '💵' });
+            setNewAccount({ name: '', type: 'cash', currency: 'BYN', balance: '' });
             setShowForm(false);
             success(`Счет "${newAccount.name}" успешно создан`);
         } catch (error) {
@@ -85,26 +133,12 @@ function Accounts() {
         }
     };
 
-    const handleDeleteAccount = async (id, name) => {
-        if (!window.confirm('Вы уверены, что хотите удалить этот счет? Все связанные транзакции также будут удалены.')) return;
-
-        try {
-            await accountsAPI.delete(id);
-            setAccounts(accounts.filter(a => a.id !== id));
-            success(`Счет "${name}" удален`);
-        } catch (error) {
-            console.error('Ошибка удаления счета:', error);
-            showError('Не удалось удалить счет');
-        }
-    };
-
     const handleEdit = (account) => {
         setEditingId(account.id);
         setEditForm({
             name: account.name,
             type: account.type,
-            currency: account.currency,
-            icon: account.icon
+            currency: account.currency
         });
     };
 
@@ -115,7 +149,11 @@ function Accounts() {
 
     const handleEditSubmit = async (id) => {
         try {
-            const response = await accountsAPI.update(id, editForm);
+            const response = await accountsAPI.update(id, {
+                name: editForm.name,
+                type: editForm.type,
+                currency: editForm.currency
+            });
             setAccounts(accounts.map(a => a.id === id ? response.data : a));
             setEditingId(null);
             setEditForm({});
@@ -138,7 +176,8 @@ function Accounts() {
         });
     };
 
-    const totalBalance = accounts.reduce((sum, acc) => {
+    // Общий баланс в BYN (для отображения в главной валюте)
+    const totalBalanceBYN = accounts.reduce((sum, acc) => {
         const balance = typeof acc.balance === 'number' ? acc.balance : parseFloat(acc.balance) || 0;
         return sum + balance;
     }, 0);
@@ -150,6 +189,17 @@ function Accounts() {
     return (
         <div className="accounts-page">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeDeleteConfirm}
+                onConfirm={confirmDelete}
+                title="Удаление счета"
+                message={`Вы уверены, что хотите удалить счет "${confirmModal.accountName}"? Все связанные транзакции также будут удалены.`}
+                confirmText="Удалить"
+                cancelText="Отмена"
+                type="danger"
+            />
             
             <div className="page-header">
                 <h1 className="page-title">Счета</h1>
@@ -189,10 +239,10 @@ function Accounts() {
                                 value={newAccount.currency}
                                 onChange={(e) => setNewAccount({ ...newAccount, currency: e.target.value })}
                             >
-                                <option value="BYN">BYN</option>
-                                <option value="USD">USD</option>
-                                <option value="EUR">EUR</option>
-                                <option value="RUB">RUB</option>
+                                <option value="BYN">BYN (Белорусский рубль)</option>
+                                <option value="USD">USD (Доллар США)</option>
+                                <option value="EUR">EUR (Евро)</option>
+                                <option value="RUB">RUB (Российский рубль)</option>
                             </select>
                         </div>
                         <div className="form-group">
@@ -258,15 +308,16 @@ function Accounts() {
                                 <div className="account-info">
                                     <div className="account-name">{account.name}</div>
                                     <div className="account-type">{getTypeName(account.type)}</div>
+                                    <div className="account-currency">{currencySymbols[account.currency] || account.currency}</div>
                                 </div>
                                 <div className="account-balance">
-                                    {Number(account.balance).toLocaleString()} {account.currency}
+                                    {Number(account.balance).toLocaleString()} {currencySymbols[account.currency] || account.currency}
                                 </div>
                                 <div className="account-actions">
                                     <button className="btn-edit" onClick={() => handleEdit(account)}>
                                         <FiEdit2 />
                                     </button>
-                                    <button className="btn-delete" onClick={() => handleDeleteAccount(account.id, account.name)}>
+                                    <button className="btn-delete" onClick={() => openDeleteConfirm(account.id, account.name)}>
                                         <FiTrash2 />
                                     </button>
                                 </div>
@@ -280,8 +331,8 @@ function Accounts() {
             </div>
 
             <div className="total-balance">
-                <span>Общий баланс всех счетов</span>
-                <strong>{!isNaN(totalBalance) && totalBalance !== 0 ? totalBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} BYN</strong>
+                <span>Общий баланс (в BYN)</span>
+                <strong>{totalBalanceBYN.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BYN</strong>
             </div>
         </div>
     );

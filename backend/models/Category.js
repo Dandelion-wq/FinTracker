@@ -27,10 +27,6 @@ const Category = sequelize.define('Category', {
         type: DataTypes.STRING(7),
         defaultValue: '#27AE60'
     },
-    icon: {
-        type: DataTypes.STRING(50),
-        allowNull: true
-    },
     monthlyLimit: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true

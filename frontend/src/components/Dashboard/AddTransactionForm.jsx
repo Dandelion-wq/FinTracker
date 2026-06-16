@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { FiPlus, FiTrendingUp, FiTrendingDown, FiDollarSign, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import './AddTransactionForm.css';
 
+// Символы валют
+const currencySymbols = {
+    'BYN': 'BYN',
+    'USD': '$',
+    'EUR': '€',
+    'RUB': '₽'
+};
+
 function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = [] }) {
     const [formData, setFormData] = useState({
         amount: '',
@@ -42,6 +50,16 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
         }
     };
 
+    // Получение символа валюты
+    const getCurrencySymbol = (currency) => {
+        return currencySymbols[currency] || currency;
+    };
+
+    // Форматирование суммы с валютой
+    const formatBalance = (balance, currency) => {
+        return `${balance.toLocaleString()} ${getCurrencySymbol(currency)}`;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         setBalanceError('');
@@ -54,17 +72,18 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
         const amount = parseFloat(formData.amount);
         const selectedAccount = accounts.find(acc => acc.id === parseInt(formData.accountId));
         const currentBalance = selectedAccount?.balance || 0;
+        const currency = selectedAccount?.currency || 'BYN';
         
         if (formData.type === 'expense' && !selectedBudget) {
             if (currentBalance < amount) {
-                setBalanceError(`Недостаточно средств на счете "${selectedAccount?.name}"! Доступно: ${currentBalance.toLocaleString()} BYN`);
+                setBalanceError(`Недостаточно средств на счете "${selectedAccount?.name}"! Доступно: ${formatBalance(currentBalance, currency)}`);
                 return;
             }
         }
         
         if (selectedBudget?.type === 'saving' && formData.savingAction === 'deposit') {
             if (currentBalance < amount) {
-                setBalanceError(`Недостаточно средств на счете "${selectedAccount?.name}"! Доступно: ${currentBalance.toLocaleString()} BYN`);
+                setBalanceError(`Недостаточно средств на счете "${selectedAccount?.name}"! Доступно: ${formatBalance(currentBalance, currency)}`);
                 return;
             }
         }
@@ -73,7 +92,8 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
             amount: amount,
             accountId: parseInt(formData.accountId),
             date: formData.date,
-            description: formData.description
+            description: formData.description,
+            currency: currency // Добавляем валюту транзакции
         };
         
         if (selectedBudget && selectedBudget.type === 'saving') {
@@ -82,13 +102,13 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
                 transactionData.savingAction = 'deposit';
                 transactionData.budgetId = selectedBudget.id;
                 transactionData.categoryId = null;
-                transactionData.description = `Пополнение накоплений "${selectedBudget.name}": +${amount} BYN`;
+                transactionData.description = `Пополнение накоплений "${selectedBudget.name}": +${amount} ${getCurrencySymbol(currency)}`;
             } else {
                 transactionData.type = 'income';
                 transactionData.savingAction = 'withdrawal';
                 transactionData.budgetId = selectedBudget.id;
                 transactionData.categoryId = null;
-                transactionData.description = `Снятие с накоплений "${selectedBudget.name}": -${amount} BYN`;
+                transactionData.description = `Снятие с накоплений "${selectedBudget.name}": -${amount} ${getCurrencySymbol(currency)}`;
             }
         } else {
             transactionData.type = formData.type;
@@ -127,7 +147,7 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
             <h3><FiPlus /> Добавить транзакцию</h3>
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>Сумма (BYN)</label>
+                    <label>Сумма</label>
                     <input
                         type="number"
                         name="amount"
@@ -137,6 +157,11 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
                         step="0.01"
                         required
                     />
+                    {selectedAccount && (
+                        <small className="form-hint">
+                            Валюта счета: {getCurrencySymbol(selectedAccount.currency || 'BYN')}
+                        </small>
+                    )}
                 </div>
                 
                 <div className="form-group">
@@ -144,13 +169,13 @@ function AddTransactionForm({ onAddTransaction, accounts, categories, budgets = 
                     <select name="accountId" value={formData.accountId} onChange={handleChange}>
                         {accounts.map(acc => (
                             <option key={acc.id} value={acc.id}>
-                                {acc.name} (доступно: {acc.balance.toLocaleString()} BYN)
+                                {acc.name} ({getCurrencySymbol(acc.currency || 'BYN')})
                             </option>
                         ))}
                     </select>
                     {selectedAccount && (
                         <small className="form-hint balance-hint">
-                            Доступно: {selectedAccount.balance.toLocaleString()} BYN
+                            Доступно: {formatBalance(selectedAccount.balance, selectedAccount.currency || 'BYN')}
                         </small>
                     )}
                 </div>

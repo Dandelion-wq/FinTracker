@@ -1,16 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-    FiPlus, 
-    FiEdit2, 
-    FiTrash2, 
-    FiTrendingUp, 
-    FiTrendingDown,
-    FiCheck,
-    FiX
+    FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiTrendingDown,
+    FiCheck, FiX, FiAlertCircle
 } from 'react-icons/fi';
-import { categoriesAPI } from '../../services/api';
+import { categoriesAPI, transactionsAPI } from '../../services/api';
 import useToast from '../../hooks/useToast';
 import ToastContainer from '../UI/ToastContainer';
+import ConfirmModal from '../UI/ConfirmModal';
 import './Categories.css';
 
 function Categories() {
@@ -20,15 +16,28 @@ function Categories() {
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
     const { toasts, removeToast, success, error: showError, warning } = useToast();
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        categoryId: null,
+        categoryName: ''
+    });
     const [newCategory, setNewCategory] = useState({
         name: '',
         type: 'expense',
         color: '#E74C3C',
         monthlyLimit: ''
     });
+    
+    // Для отслеживания уже показанных уведомлений
+    const notifiedLimitsRef = useRef(new Set());
 
     useEffect(() => {
         loadCategories();
+        
+        // Очищаем Set при размонтировании
+        return () => {
+            notifiedLimitsRef.current.clear();
+        };
     }, []);
 
     const loadCategories = async () => {
@@ -36,11 +45,134 @@ function Categories() {
             setLoading(true);
             const response = await categoriesAPI.getAll();
             setCategories(response.data);
+            
+            // Проверяем лимиты после загрузки
+            await checkCategoryLimits(response.data, true);
         } catch (error) {
             console.error('Ошибка загрузки категорий:', error);
             showError('Не удалось загрузить категории');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Получение транзакций за месяц
+    const getMonthlyTransactions = async () => {
+        const response = await transactionsAPI.getAll();
+        return response.data || [];
+    };
+
+    // Расчет суммы расходов по категории за текущий месяц
+    const calculateCategorySpending = (transactions, categoryId, currentMonth) => {
+        const categoryTransactions = transactions.filter(t => 
+            t.type === 'expense' && 
+            t.categoryId === categoryId &&
+            t.date.startsWith(currentMonth)
+        );
+        return categoryTransactions.reduce((sum, t) => sum + (t.amountInBYN || t.amount), 0);
+    };
+
+    // Проверка лимитов категорий
+    const checkCategoryLimits = async (categoriesList, isInitialLoad = false) => {
+        const now = new Date();
+        const currentMonth = now.toISOString().slice(0, 7);
+        
+        // Получаем транзакции
+        const transactions = await getMonthlyTransactions();
+        
+        const expenseCategories = categoriesList.filter(c => c.type === 'expense' && c.monthlyLimit && c.monthlyLimit > 0);
+        
+        // Создаем ключ для текущего месяца
+        const monthKey = currentMonth;
+        
+        for (const category of expenseCategories) {
+            const totalSpent = calculateCategorySpending(transactions, category.id, currentMonth);
+            const limit = category.monthlyLimit;
+            const overspendAmount = totalSpent - limit;
+            
+            // Создаем уникальный ключ для уведомления о превышении
+            const overspendKey = `${category.id}-${monthKey}-overspend`;
+            // Создаем ключ для предупреждения о 90% лимита
+            const warningKey = `${category.id}-${monthKey}-warning`;
+            
+            // Проверка превышения лимита
+            if (totalSpent > limit) {
+                // Показываем уведомление только если оно еще не было показано
+                if (!notifiedLimitsRef.current.has(overspendKey)) {
+                    notifiedLimitsRef.current.add(overspendKey);
+                    // Удаляем ключ предупреждения, если был
+                    if (notifiedLimitsRef.current.has(warningKey)) {
+                        notifiedLimitsRef.current.delete(warningKey);
+                    }
+                    
+                    const overspendAmountFormatted = overspendAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    warning(`Превышение лимита на категорию "${category.name}"! Лимит превышен на ${overspendAmountFormatted} BYN`);
+                }
+            } 
+            // Проверка на 90% лимита (только если нет превышения)
+            else if (totalSpent >= limit * 0.9 && !notifiedLimitsRef.current.has(overspendKey)) {
+                if (!notifiedLimitsRef.current.has(warningKey)) {
+                    notifiedLimitsRef.current.add(warningKey);
+                    const remaining = (limit - totalSpent).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    warning(`Внимание! В категории "${category.name}" осталось ${remaining} BYN до лимита.`);
+                }
+            }
+            // Если траты меньше 90%, удаляем ключи уведомлений
+            else if (totalSpent < limit * 0.9) {
+                if (notifiedLimitsRef.current.has(warningKey)) {
+                    notifiedLimitsRef.current.delete(warningKey);
+                }
+                if (notifiedLimitsRef.current.has(overspendKey)) {
+                    notifiedLimitsRef.current.delete(overspendKey);
+                }
+            }
+        }
+    };
+
+    // Проверка лимитов после добавления/изменения транзакции
+    const recheckLimits = async () => {
+        await checkCategoryLimits(categories, false);
+    };
+
+    // Открытие модального окна подтверждения удаления
+    const openDeleteConfirm = (id, name) => {
+        setConfirmModal({
+            isOpen: true,
+            categoryId: id,
+            categoryName: name
+        });
+    };
+
+    // Закрытие модального окна
+    const closeDeleteConfirm = () => {
+        setConfirmModal({
+            isOpen: false,
+            categoryId: null,
+            categoryName: ''
+        });
+    };
+
+    // Подтверждение удаления
+    const confirmDelete = async () => {
+        const { categoryId, categoryName } = confirmModal;
+        
+        try {
+            await categoriesAPI.delete(categoryId);
+            const updatedCategories = categories.filter(c => c.id !== categoryId);
+            setCategories(updatedCategories);
+            success(`Категория "${categoryName}" удалена`);
+            
+            // Очищаем уведомления для удаленной категории
+            for (const key of notifiedLimitsRef.current) {
+                if (key.startsWith(`${categoryId}-`)) {
+                    notifiedLimitsRef.current.delete(key);
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка удаления категории:', error);
+            showError('Не удалось удалить категорию');
+        } finally {
+            closeDeleteConfirm();
         }
     };
 
@@ -62,26 +194,17 @@ function Categories() {
             };
             
             const response = await categoriesAPI.create(dataToSend);
-            setCategories([...categories, response.data]);
+            const updatedCategories = [...categories, response.data];
+            setCategories(updatedCategories);
             setNewCategory({ name: '', type: 'expense', color: '#E74C3C', monthlyLimit: '' });
             setShowForm(false);
             success(`Категория "${newCategory.name}" успешно создана`);
+            
+            // Проверяем лимиты для новой категории
+            await checkCategoryLimits(updatedCategories);
         } catch (error) {
             console.error('Ошибка создания категории:', error);
             showError(error.response?.data?.error || 'Не удалось создать категорию');
-        }
-    };
-
-    const handleDeleteCategory = async (id, name) => {
-        if (!window.confirm('Вы уверены, что хотите удалить эту категорию?')) return;
-        
-        try {
-            await categoriesAPI.delete(id);
-            setCategories(categories.filter(c => c.id !== id));
-            success(`Категория "${name}" удалена`);
-        } catch (error) {
-            console.error('Ошибка удаления категории:', error);
-            showError('Не удалось удалить категорию');
         }
     };
 
@@ -108,10 +231,21 @@ function Categories() {
             };
             
             const response = await categoriesAPI.update(id, dataToSend);
-            setCategories(categories.map(c => c.id === id ? response.data : c));
+            const updatedCategories = categories.map(c => c.id === id ? response.data : c);
+            setCategories(updatedCategories);
             setEditingId(null);
             setEditForm({});
             success(`Категория "${editForm.name}" обновлена`);
+            
+            // Очищаем уведомления для обновленной категории
+            for (const key of notifiedLimitsRef.current) {
+                if (key.startsWith(`${id}-`)) {
+                    notifiedLimitsRef.current.delete(key);
+                }
+            }
+            
+            // Проверяем лимиты заново
+            await checkCategoryLimits(updatedCategories);
         } catch (error) {
             console.error('Ошибка обновления категории:', error);
             showError('Не удалось обновить категорию');
@@ -130,6 +264,17 @@ function Categories() {
     return (
         <div className="categories-page">
             <ToastContainer toasts={toasts} removeToast={removeToast} />
+            
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeDeleteConfirm}
+                onConfirm={confirmDelete}
+                title="Удаление категории"
+                message={`Вы уверены, что хотите удалить категорию "${confirmModal.categoryName}"? Все связанные транзакции будут потеряны.`}
+                confirmText="Удалить"
+                cancelText="Отмена"
+                type="danger"
+            />
             
             <div className="page-header">
                 <h1 className="page-title">Категории</h1>
@@ -182,9 +327,10 @@ function Categories() {
                                     type="number"
                                     value={newCategory.monthlyLimit}
                                     onChange={(e) => setNewCategory({ ...newCategory, monthlyLimit: e.target.value })}
-                                    placeholder="0,00"
+                                    placeholder="0,00 (0 - без лимита)"
                                     step="0.01"
                                 />
+                                <small className="form-hint">При превышении лимита вы получите уведомление</small>
                             </div>
                         )}
                     </div>
@@ -250,7 +396,7 @@ function Categories() {
                                             <button className="btn-edit" onClick={() => handleEdit(category)}>
                                                 <FiEdit2 />
                                             </button>
-                                            <button className="btn-delete" onClick={() => handleDeleteCategory(category.id, category.name)}>
+                                            <button className="btn-delete" onClick={() => openDeleteConfirm(category.id, category.name)}>
                                                 <FiTrash2 />
                                             </button>
                                         </div>
@@ -307,7 +453,7 @@ function Categories() {
                                             <button className="btn-edit" onClick={() => handleEdit(category)}>
                                                 <FiEdit2 />
                                             </button>
-                                            <button className="btn-delete" onClick={() => handleDeleteCategory(category.id, category.name)}>
+                                            <button className="btn-delete" onClick={() => openDeleteConfirm(category.id, category.name)}>
                                                 <FiTrash2 />
                                             </button>
                                         </div>

@@ -20,6 +20,16 @@ function Sidebar({ onLogout, user, isOpen, onClose }) {
         }
     };
 
+    // Формируем полное ФИО с отчеством
+    const getFullName = () => {
+        if (!user) return '';
+        const parts = [user.lastName, user.firstName];
+        if (user.patronymic) {
+            parts.push(user.patronymic);
+        }
+        return parts.filter(Boolean).join(' ');
+    };
+
     return (
         <div className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-logo">
@@ -54,7 +64,7 @@ function Sidebar({ onLogout, user, isOpen, onClose }) {
                 <div className="user-info">
                     <FiUser className="user-icon" />
                     <div>
-                        <div className="user-name">{user?.lastName} {user?.firstName}</div>
+                        <div className="user-name">{getFullName()}</div>
                         <div className="user-email">
                             <FiMail size={12} />
                             <span>{user?.email}</span>
