@@ -42,7 +42,7 @@ function Dashboard() {
         }
     };
 
-    // Проверка бюджетов после добавления транзакции
+    //проверка бюджетов после добавления транзакции
     const checkBudgetsAfterTransaction = (newTransaction, currentBudgets, allTransactions) => {
         const now = new Date();
         const transactionDate = new Date(newTransaction.date);
@@ -98,29 +98,29 @@ function Dashboard() {
             let response;
 
             if (selectedBudget && selectedBudget.type === 'saving') {
-                console.log('🎯 Это накопительный бюджет!');
+                console.log('Это накопительный бюджет!');
                 const transactionToSend = {
                     amount: transactionData.amount,
                     accountId: transactionData.accountId,
                     date: transactionData.date,
                     description: transactionData.description,
                     type: 'expense',
-                    savingAction: 'deposit',      // ← обязательно
-                    budgetId: selectedBudget.id    // ← обязательно
+                    savingAction: 'deposit',   
+                    budgetId: selectedBudget.id 
                 };
-                console.log('📤 Отправляем на сервер:', transactionToSend);
+                console.log('Отправляем на сервер:', transactionToSend);
                 response = await transactionsAPI.create(transactionToSend);
             } else {
                 response = await transactionsAPI.create(transactionData);
             }
 
-            console.log('✅ Ответ сервера:', response.data);
+            console.log('Ответ сервера:', response.data);
 
-            // Обновляем все данные
+            //обновляем все данные
             await loadData();
 
         } catch (error) {
-            console.error('❌ Ошибка:', error);
+            console.error('Ошибка:', error);
             showError(error.response?.data?.error || 'Ошибка при добавлении транзакции');
         }
     };

@@ -264,7 +264,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// сброс пароля
+//сброс пароля
 exports.resetPassword = async (req, res) => {
     try {
         const { userId, code, newPassword } = req.body;

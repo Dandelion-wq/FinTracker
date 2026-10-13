@@ -1,17 +1,14 @@
 const axios = require('axios');
-
-// Базовая валюта для отображения
 const BASE_CURRENCY = 'BYN';
 
-// Кэш курсов валют (обновляется раз в час)
+//кэш курсов валют
 let currencyRatesCache = null;
 let lastUpdateTime = null;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 час
+const CACHE_DURATION = 60 * 60 * 1000;
 
-// API для получения курсов (бесплатный)
+//API для получения курсов 
 const API_URL = 'https://api.exchangerate-api.com/v4/latest/BYN';
-
-// Альтернативный API (если первый не работает)
+//альтернативный API 
 const API_URL_ALT = 'https://api.exchangerate.host/latest?base=BYN';
 
 async function fetchRates() {
@@ -25,7 +22,6 @@ async function fetchRates() {
             return response.data.rates;
         } catch (altError) {
             console.error('Error fetching rates from alt API:', altError.message);
-            // Возвращаем заглушку, если API недоступен
             return {
                 USD: 3.2,
                 EUR: 3.5,
@@ -36,7 +32,7 @@ async function fetchRates() {
     }
 }
 
-// Получение актуальных курсов валют
+//получение курсов валют
 async function getCurrencyRates() {
     const now = Date.now();
     
@@ -49,7 +45,7 @@ async function getCurrencyRates() {
     return currencyRatesCache;
 }
 
-// Конвертация суммы из одной валюты в BYN
+//конвертация валюты в бел. руб
 async function convertToBYN(amount, fromCurrency) {
     if (fromCurrency === BASE_CURRENCY || fromCurrency === 'BYN') {
         return amount;
@@ -61,10 +57,9 @@ async function convertToBYN(amount, fromCurrency) {
         
         if (!rate) {
             console.warn(`Rate not found for currency: ${fromCurrency}`);
-            return amount; // Возвращаем исходную сумму, если курс не найден
+            return amount; 
         }
         
-        // amount в fromCurrency → BYN
         return amount / rate;
     } catch (error) {
         console.error('Conversion error:', error);
@@ -72,7 +67,7 @@ async function convertToBYN(amount, fromCurrency) {
     }
 }
 
-// Конвертация суммы из BYN в указанную валюту
+//конвертация суммы из бел. руб
 async function convertFromBYN(amount, toCurrency) {
     if (toCurrency === BASE_CURRENCY || toCurrency === 'BYN') {
         return amount;
@@ -87,7 +82,6 @@ async function convertFromBYN(amount, toCurrency) {
             return amount;
         }
         
-        // amount в BYN → toCurrency
         return amount * rate;
     } catch (error) {
         console.error('Conversion error:', error);
@@ -95,7 +89,7 @@ async function convertFromBYN(amount, toCurrency) {
     }
 }
 
-// Получить текущий курс для отображения
+//получение текущего куса для отображения
 async function getExchangeRate(fromCurrency, toCurrency = BASE_CURRENCY) {
     if (fromCurrency === toCurrency) {
         return 1;
@@ -110,7 +104,6 @@ async function getExchangeRate(fromCurrency, toCurrency = BASE_CURRENCY) {
             return null;
         }
         
-        // Курс fromCurrency → toCurrency
         return toRate / fromRate;
     } catch (error) {
         console.error('Get exchange rate error:', error);

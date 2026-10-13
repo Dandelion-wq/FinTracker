@@ -29,7 +29,7 @@ exports.getAll = async (req, res) => {
                         date: {
                             [Op.between]: [budget.startDate, budget.endDate]
                         },
-                        budgetId: null // Не учитываем накопительные транзакции
+                        budgetId: null 
                     }
                 });
                 
@@ -316,7 +316,7 @@ exports.updateSavingAmount = async (req, res) => {
         const { budgetId, amount, action } = req.body;
         const userId = req.user.userId;
         
-        console.log(`\n💰 Обновление накоплений: budgetId=${budgetId}, amount=${amount}, action=${action}`);
+        console.log(`\n Обновление накоплений: budgetId=${budgetId}, amount=${amount}, action=${action}`);
         
         const budget = await Budget.findOne({
             where: { id: budgetId, userId, type: 'saving' }

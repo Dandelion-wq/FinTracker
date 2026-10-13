@@ -1,6 +1,5 @@
 const sequelize = require('../config/database');
 
-// Импортируем модели
 const User = require('./User');
 const Category = require('./Category');
 const VerificationCode = require('./VerificationCode');
@@ -9,7 +8,6 @@ const Account = require('./Account');
 const Transaction = require('./Transaction');
 const Budget = require('./Budget');
 
-// Определение связей
 User.hasMany(Category, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Category.belongsTo(User, { foreignKey: 'userId' });
 

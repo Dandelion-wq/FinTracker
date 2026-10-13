@@ -9,7 +9,6 @@ import ToastContainer from '../UI/ToastContainer';
 import ConfirmModal from '../UI/ConfirmModal';
 import './Transactions.css';
 
-// Символы валют
 const currencySymbols = {
     'BYN': 'Br',
     'USD': '$',
@@ -118,7 +117,6 @@ function Transactions() {
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0), 0);
 
-    // Открытие модального окна подтверждения удаления
     const openDeleteConfirm = (id) => {
         setConfirmModal({
             isOpen: true,
@@ -126,7 +124,6 @@ function Transactions() {
         });
     };
 
-    // Закрытие модального окна
     const closeDeleteConfirm = () => {
         setConfirmModal({
             isOpen: false,
@@ -134,7 +131,6 @@ function Transactions() {
         });
     };
 
-    // Подтверждение удаления
     const confirmDelete = async () => {
         const { transactionId } = confirmModal;
         
